@@ -16,7 +16,7 @@ import FancyTerminal from "./helper/FancyTerminal";
  * and the server will be started
  */
 
-const config = require("./../config/config.json")["server"];
+let config = null;
 
 const fs = require("fs"); //file-system
 
@@ -30,21 +30,15 @@ const helmet = require("helmet"); //Security
 const cluster = require("cluster"); //distibuting this server on all cores of the server
 
 let numCPUs = os.cpus().length;
-if(!isNaN(config.fixedAmountOfThreads)){
-    let fixedAmountOfThreads = parseInt(config.fixedAmountOfThreads);
-    if(fixedAmountOfThreads > 0){
-        numCPUs = fixedAmountOfThreads;
-    }
-}
 
 //numCPUs = 1;
 const redis = require("redis"); //for caching
 const cors = require("cors"); // for cross origin allow support
 
-const models = require("./../models"); // Sequelize The ORM (Database Models)
+let models = null;
 
 const RedisServer = require("redis-server"); //redis server for caching requests
-const redisPort = config.redisPort;
+let redisPort = 0;
 
 var myServerAPILogger,
     serverAPILogger,
@@ -80,6 +74,10 @@ export default class ServerAPI {
     }
 
     async start(){
+        models = this.models;
+        numCPUs = this.numCPUs;
+        config = this.config;
+        redisPort = this.config.redisPort;
         await startServer();
     }
 
