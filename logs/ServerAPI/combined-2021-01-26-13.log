@@ -1,0 +1,36 @@
+2021-01-26T12:39:30.810Z [Worker: Master - ServerAPI] info: [ServerAPI] Logger Created
+2021-01-26T12:39:30.811Z [Worker: Master - ServerAPI] info: [ScheduleModule] initialising
+2021-01-26T12:39:30.812Z [Worker: Master - ServerAPI] info: [CustomSchedule] initialising
+2021-01-26T12:39:30.812Z [Worker: Master - ServerAPI] info: [CustomSchedule] initialised
+2021-01-26T12:39:30.812Z [Worker: Master - ServerAPI] info: [DatabaseBackupSchedule] initialising
+2021-01-26T12:39:30.817Z [Worker: Master - ServerAPI] info: [UserInactivitySchedule] initialising
+2021-01-26T12:39:30.818Z [Worker: Master - ServerAPI] info: [UserInactivitySchedule] initialised
+2021-01-26T12:39:30.819Z [Worker: Master - ServerAPI] info: [SystemInformationSchedule] initialising
+2021-01-26T12:39:30.819Z [Worker: Master - ServerAPI] info: Created SystemInformationSchedule
+2021-01-26T12:39:30.820Z [Worker: Master - ServerAPI] info: [SystemInformationSchedule] initialised
+2021-01-26T12:39:30.820Z [Worker: Master - ServerAPI] info: [ScheduleModule] initialised
+2021-01-26T12:39:30.820Z [Worker: Master - ServerAPI] info: [FirebaseAPI] initialising
+2021-01-26T12:39:30.820Z [Worker: Master - ServerAPI] info: [FirebaseAPI] Load Private Key
+2021-01-26T12:39:30.821Z [Worker: Master - ServerAPI] info: Loading Firebase Private Key File
+2021-01-26T12:39:30.821Z [Worker: Master - ServerAPI] error: [FirebaseAPI] couldn't find the private key!
+2021-01-26T12:39:30.821Z [Worker: Master - ServerAPI] info: [FirebaseAPI] initialised
+2021-01-26T12:39:30.840Z [Worker: Master - ServerAPI] info: [DatabaseBackupSchedule] initialised
+2021-01-26T12:39:32.000Z [Worker: 1 - ServerAPI] info: [ServerAPI] Logger Created
+2021-01-26T12:39:32.002Z [Worker: 1 - ServerAPI] info: [ScheduleModule] initialising
+2021-01-26T12:39:32.002Z [Worker: 1 - ServerAPI] info: [SystemInformationSchedule] initialising
+2021-01-26T12:39:32.002Z [Worker: 1 - ServerAPI] info: Created SystemInformationSchedule
+2021-01-26T12:39:32.007Z [Worker: 1 - ServerAPI] info: [SystemInformationSchedule] initialised
+2021-01-26T12:39:32.008Z [Worker: 1 - ServerAPI] info: [ScheduleModule] initialised
+2021-01-26T12:39:32.008Z [Worker: 1 - ServerAPI] info: [FirebaseAPI] initialising
+2021-01-26T12:39:32.008Z [Worker: 1 - ServerAPI] info: [FirebaseAPI] Load Private Key
+2021-01-26T12:39:32.008Z [Worker: 1 - ServerAPI] info: Loading Firebase Private Key File
+2021-01-26T12:39:32.009Z [Worker: 1 - ServerAPI] error: [FirebaseAPI] couldn't find the private key!
+2021-01-26T12:39:32.009Z [Worker: 1 - ServerAPI] info: [FirebaseAPI] initialised
+2021-01-26T12:39:32.032Z [Worker: 1 - ServerAPI] info: [MyAccessControl] initialising
+2021-01-26T12:39:32.033Z [Worker: 1 - ServerAPI] info: [MyAccessControl] initialisePermissions
+2021-01-26T12:39:32.039Z [Worker: 1 - ServerAPI] info: [MyAccessControl] initialisePermissions finished
+2021-01-26T12:39:32.039Z [Worker: 1 - ServerAPI] info: [MyAccessControl] initialised
+2021-01-26T12:39:32.039Z [Worker: 1 - ServerAPI] info: [MyExpressRouter] initialising
+2021-01-26T12:39:32.040Z [Worker: 1 - ServerAPI] info: [MyExpressRouter] configuring Routes App
+2021-01-26T12:39:32.061Z [Worker: 1 - ServerAPI] info: [MyTokenHelper] creating
+2021-01-26T12:39:32.064Z [Worker: 1 - ServerAPI] info: [MyExpressRouter] initialised
