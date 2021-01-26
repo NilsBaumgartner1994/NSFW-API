@@ -41,8 +41,6 @@ if(!isNaN(config.fixedAmountOfThreads)){
 const redis = require("redis"); //for caching
 const cors = require("cors"); // for cross origin allow support
 
-const promBundle = require("express-prom-bundle"); // prometheus for express easy integration
-
 const models = require("./../models"); // Sequelize The ORM (Database Models)
 
 const RedisServer = require("redis-server"); //redis server for caching requests
@@ -283,8 +281,6 @@ function createMasterExpressApp() {
     expressApp = new Express();
     expressApp.use(cors()); //we allow cross origin
     expressApp.use(cors({credentials: true, origin: true}));
-    expressApp.use("/metrics/metrics", promBundle.clusterMetrics()); //start metrics for the clusters
-    //expressApp.listen(9999)
 }
 
 /**
@@ -295,24 +291,6 @@ function createWorkerExpressApp(workerID) {
     addWorkerOutput(workerID, "Creating ExpressApp");
     expressApp = new Express();
     expressApp.use(cors()); // we allow cross orign
-
-    expressApp.use(
-        promBundle({
-            autoregister: false, // disable /metrics for single workers
-            includePath: true,
-            metricType: "histogram",
-            includeMethod: true,
-            buckets: [0.1, 1, 5],
-            normalizePath: [
-                [/\d[\-\d]*/g, "#val"] //replace id's like 2345-323-234 to #val
-            ],
-            promClient: {
-                collectDefaultMetrics: {
-                    timeout: 1000
-                }
-            }
-        })
-    );
 
     expressApp.use(helmet()); //use security
     expressApp.disable("x-powered-by"); //Attackers can use this header to detect apps running Express and then launch specifically-targeted attacks.
