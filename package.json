@@ -45,7 +45,7 @@
     "dateformat": "^3.0.3",
     "decompress": "^4.2.1",
     "ejs": "^2.6.2",
-    "express": "5.0.0-alpha.7",
+    "express": "^4.17.1",
     "express-async-handler": "^1.1.4",
     "express-basic-auth": "^1.2.0",
     "express-fileupload": "^1.1.6",
