@@ -337,7 +337,8 @@ async function createWorkerModules(workerID) {
         expressApp,
         models,
         myAccessControl.getAccessControlInstance(),
-        redisClient
+        redisClient,
+        config["server"]
     );
     await myExpressRouter.configureController(); //configure the routes
 }
