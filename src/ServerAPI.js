@@ -206,7 +206,7 @@ async function prepareMasterServer() {
  */
 function prepareSharedLoggerAndModules(workerID) {
     createSharedLoggers(workerID);
-    scheduleModule = new ScheduleModule(serverAPILogger,models,redisClient,cluster.isMaster);
+    scheduleModule = new ScheduleModule(serverAPILogger,models,redisClient,cluster.isMaster, config["server"]);
     createSharedModules();
 }
 
