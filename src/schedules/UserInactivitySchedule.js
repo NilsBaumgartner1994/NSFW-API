@@ -24,11 +24,11 @@ export default class UserInactivitySchedule {
      * @param models the sequelize models
      * @param firebaseAPI the firebaseapi to inform users
      */
-    constructor(logger, models, schedule, usersConfig) {
+    constructor(logger, models, schedule, serverConfig) {
         this.logger = logger;
         this.models = models;
         this.schedule = schedule;
-        this.usersConfig = usersConfig;
+        this.usersConfig = serverConfig["users"];
         this.logger.info("[UserInactivitySchedule] initialising");
         this.configureParams();
         this.initializeSchedule();
@@ -36,15 +36,15 @@ export default class UserInactivitySchedule {
     }
 
     configureParams(){
-        this.minutesOfInactivityUntilDeletion = 60 * 24 * this.usersConfig.users.DaysOfInactivityUntilDeletion;
-        this.minutesOfInactiviyAfterInactivityMessage = 60 * 24 * this.usersConfig.users.DaysOfInactivityUntilWarningOfDeletion;
+        this.minutesOfInactivityUntilDeletion = 60 * 24 * this.usersConfig.DaysOfInactivityUntilDeletion;
+        this.minutesOfInactiviyAfterInactivityMessage = 60 * 24 * this.usersConfig.DaysOfInactivityUntilWarningOfDeletion;
     }
 
     initializeSchedule() {
         let instance = this;
         //check this once a day at 18:00
         //                                        S M H D M DW
-        let checkSchedule = schedule.scheduleJob("0 0 18 * * *", function () {
+        let checkSchedule = this.schedule.scheduleJob("0 0 18 * * *", function () {
             instance.runUserInactivitySchedule();
         });
         this.checkSchedule = checkSchedule;

@@ -1,4 +1,3 @@
-const schedule = require('node-schedule');
 import SystemInformationHelper from '../helper/SystemInformationHelper';
 
 /**
@@ -57,7 +56,7 @@ export default class SystemInformationSchedule {
     async initializeMachineSchedule() {
         //Execute a cron job every ten seconds
         const instance = this;
-        let computerSchedule = schedule.scheduleJob('*/10 * * * * *', function () {
+        let computerSchedule = this.schedule.scheduleJob('*/10 * * * * *', function () {
             instance.logSystemData();
         });
         this.computerSchedule = computerSchedule;
