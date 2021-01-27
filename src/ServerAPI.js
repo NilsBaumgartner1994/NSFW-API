@@ -54,22 +54,22 @@ var myServerAPILogger,
     scheduleModule,
     redisClient;
 
-const motd =
-    "\n" +
-    "  ▄▄█▀▀▀█▄█▀███▀▀▀███  ▄▄█▀▀▀█▄█ \n" +
-    "▄██▀     ▀█  ██    ▀█▄██▀     ▀█ \n" +
-    "██▀       ▀  ██   █  ██▀       ▀ \n" +
-    "██           ██████  ██          \n" +
-    "██▄    ▀████ ██   █  ▄█▄    ▀████\n" +
-    "▀██▄     ██  ██     ▄███▄     ██ \n" +
-    "  ▀▀███████▄██████████ ▀▀███████ \n";
+//https://manytools.org/hacker-tools/ascii-banner/
+//ANSI Shadow
+const motd = "\n" +
+    "███╗   ██╗███████╗███████╗██╗    ██╗       █████╗ ██████╗ ██╗\n" +
+    "████╗  ██║██╔════╝██╔════╝██║    ██║      ██╔══██╗██╔══██╗██║\n" +
+    "██╔██╗ ██║███████╗█████╗  ██║ █╗ ██║█████╗███████║██████╔╝██║\n" +
+    "██║╚██╗██║╚════██║██╔══╝  ██║███╗██║╚════╝██╔══██║██╔═══╝ ██║\n" +
+    "██║ ╚████║███████║██║     ╚███╔███╔╝      ██║  ██║██║     ██║\n" +
+    "╚═╝  ╚═══╝╚══════╝╚═╝      ╚══╝╚══╝       ╚═╝  ╚═╝╚═╝     ╚═╝\n";
 
 export default class ServerAPI {
 
     constructor(serverConfig, models, numCPUs) {
         this.serverConfig = serverConfig;
         this.models = models;
-        this.numCPUs = numCPUs;
+        this.numCPUs = isNaN(numCPUs) ? os.cpus().length : numCPUs;
     }
 
     async start(){

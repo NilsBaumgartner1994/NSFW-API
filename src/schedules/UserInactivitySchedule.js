@@ -22,7 +22,8 @@ export default class UserInactivitySchedule {
      * Constructor of User Inactivity Schedule
      * @param logger the loggers
      * @param models the sequelize models
-     * @param firebaseAPI the firebaseapi to inform users
+     * @param schedule
+     * @param serverConfig
      */
     constructor(logger, models, schedule, serverConfig) {
         this.logger = logger;

@@ -19,6 +19,9 @@ export default class ScheduleModule {
      * Constructor of the ScheduleModule
      * @param logger The logger class
      * @param models the sequelize models
+     * @param redisClient
+     * @param isMaster
+     * @param serverConfig
      */
     constructor(logger,models, redisClient, isMaster, serverConfig) {
         this.logger = logger;
