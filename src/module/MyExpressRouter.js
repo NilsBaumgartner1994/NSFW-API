@@ -10,14 +10,10 @@ import DefaultControllerHelper from "../helper/DefaultControllerHelper";
 import MyAuthMiddlewares from "../auth/MyAuthMiddlewares";
 import CustomControllers from "../controllers/CustomControllers";
 
-const config = require("./../../config/config.json")["server"];
-
 const { promisify } = require("util");
 
 const fileUpload = require('express-fileupload');
-const fs = require("fs"); //file-system
-const fetch = require("node-fetch");
-var bodyParser = require('body-parser'); //a parser for requests with body data
+const bodyParser = require('body-parser'); //a parser for requests with body data
 
 /**
  * The My Express Router which is the core functionality. It setups all controllers and handles routes
@@ -25,8 +21,6 @@ var bodyParser = require('body-parser'); //a parser for requests with body data
 export default class MyExpressRouter {
 
     static urlAPI = "/api"; //the api url
-    static serverAPIVersion = config.serverAPIVersion; //the server version https://semver.org/
-
     static redisClient = null; //the redis client
 
     static days_parameter = "date"; //parameter name for dates
@@ -90,19 +84,17 @@ export default class MyExpressRouter {
      * @param workerID The worker ID, since there are cluster workers
      * @param logger The logger class
      * @param bugReportLogger The bug Report logger
-     * @param firebaseAPI the firebase api
      * @param expressApp the express app itseld
      * @param models the sequelize models
      * @param myAccessControl the access controll instance
      * @param redisClient the redis client
      */
-    constructor(workerID, logger, bugReportLogger, firebaseAPI, expressApp, models, myAccessControl, redisClient) {
+    constructor(workerID, logger, bugReportLogger, expressApp, models, myAccessControl, redisClient, serverConfig) {
         this.workerID = workerID;
         this.logger = logger;
-        this.bugReportLogger = bugReportLogger;
+        this.serverConfig = serverConfig;
         this.logger.info("[MyExpressRouter] initialising");
         this.models = models;
-        this.firebaseAPI = firebaseAPI;
         this.expressApp = expressApp;
         this.myAccessControl = myAccessControl;
         MyExpressRouter.redisClient = redisClient;
@@ -110,7 +102,8 @@ export default class MyExpressRouter {
         this.configureExpressApp(); //configure parameters like which requests are allowed
         // !!BEFORE any other things, otherwise body content wont be parsed
 
-        this.myAuthMiddlewares = new MyAuthMiddlewares(workerID, logger, expressApp, MyExpressRouter.routeAuth);
+        let authConfig = serverConfig["auth"];
+        this.myAuthMiddlewares = new MyAuthMiddlewares(workerID, logger, expressApp, MyExpressRouter.routeAuth, authConfig);
         //create the token helper
         //!!AFTER configureExpressApp, otherwise body content wont be parsed ...
 
@@ -230,8 +223,8 @@ export default class MyExpressRouter {
     configureExpressApp() {
         this.logger.info("[MyExpressRouter] configuring Routes App");
 
-        let maxFileUploadSizeInMb = config.uploads.maxFileUploadSizeInMb || 50;
-        let maxBodyUploadSizeInMb = config.uploads.maxBodyUploadSizeInMb || 50;
+        let maxFileUploadSizeInMb = this.serverConfig.uploads.maxFileUploadSizeInMb || 50;
+        let maxBodyUploadSizeInMb = this.serverConfig.uploads.maxBodyUploadSizeInMb || 50;
         this.expressApp.use(bodyParser.json({limit: maxBodyUploadSizeInMb+'mb'})); //set body limit
         this.expressApp.use(bodyParser.urlencoded({limit: maxBodyUploadSizeInMb+'mb', extended: true})); //set url limit
         this.expressApp.use(Express.json());
@@ -262,8 +255,7 @@ export default class MyExpressRouter {
 
         this.expressApp.get(MyExpressRouter.routeVersion, this.handleVersionRequest.bind(this));
         this.expressApp.get(MyExpressRouter.custom_routeSystemInformation, this.handleSystemInformationGetRequest.bind(this));
-        this.expressApp.post(MyExpressRouter.custom_routeSendPushNotification, this.handleSendPushNotificationPostRequest.bind(this));
-        this.expressApp.get(MyExpressRouter.custom_routeMetrics, this.handleMetricsRequest.bind(this));
+        //this.expressApp.get(MyExpressRouter.custom_routeMetrics, this.handleMetricsRequest.bind(this));
     }
 
     /**
@@ -395,8 +387,8 @@ export default class MyExpressRouter {
      * curl -i http://localhost/api/version
      */
     handleVersionRequest(req, res) {
-        let answer = {version: MyExpressRouter.serverAPIVersion};
-        //answer = jsonTest;
+        let version = this.serverConfig.serverAPIVersion; //the server version https://semver.org/
+        let answer = {version: version};
         MyExpressRouter.responseWithSuccessJSON(res, answer);
 
     }
@@ -436,56 +428,4 @@ export default class MyExpressRouter {
             });
         }
     }
-
-    /**
-     * Sends Push Notifications to the given Devices
-     * @param req the request object
-     * @param res the response object
-     *
-     * @api {get} /api/custom/sendNotification Get All System Informations
-     * @apiDescription Sends Push Notifications to the given Devices
-     * @apiName GetSendPushNotification
-     * @apiPermission Admin
-     * @apiUse MyAuthorization
-     * @apiGroup Custom
-     *
-     * @apiParam (Request message body) {String} title The title for the push notification
-     * @apiParam (Request message body) {String} body The body text for the push notification
-     * @apiParam (Request message body) {String} badge for iOS Devices the App Notifier number
-     * @apiParam (Request message body) {List[String]} listOfDeviceIDs The list of recipients
-     *
-     * @apiSuccess {List[Routes]} Routes All possible routes
-     * @apiError (Error) {String} error The possible error that can occur. Possible Errors: INTERNAL_SERVER_ERROR, FORBIDDEN
-     */
-    handleSendPushNotificationPostRequest(req, res) {
-
-        let permission = this.myAccessControl
-        .can(req.locals.currentUser.role)
-        .createAny(MyExpressRouter.adminRoutes_accessControlResource);
-
-        if (permission.granted) { //can create a push notification
-            this.logger.info("Received a Post Request to send a Message to Devices");
-            //get all params
-            let title = req.body.title;
-            let body = req.body.body;
-            let badge = req.body.badge;
-            let listOfDeviceIDs = req.body.listOfDeviceIDs;
-
-            this.firebaseAPI.sendPushNotification(listOfDeviceIDs, title, body, badge).then((answer) => { //call firebase helper
-                this.logger.info("Sending: " + listOfDeviceIDs.length + " tokens");
-                MyExpressRouter.responseWithSuccessJSON(res, answer); //answer to client
-            }).catch(err => {
-                // an error occurred, call the done function and pass the err message
-                this.logger.error("Send Notification created an error");
-                this.logger.error(err.toString());
-                MyExpressRouter.responseWithErrorJSON(res, HttpStatus.INTERNAL_SERVER_ERROR, answer);
-            });
-        } else {
-            MyExpressRouter.responseWithErrorJSON(res, HttpStatus.FORBIDDEN, {
-                errorCode: HttpStatus.FORBIDDEN,
-                error: 'Forbidden to get System Informations'
-            });
-        }
-    }
-
 }

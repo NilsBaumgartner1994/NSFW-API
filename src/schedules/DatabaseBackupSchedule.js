@@ -1,7 +1,5 @@
 //import DatabaseBackupModule from "../module/DatabaseBackupModule";
 
-const schedule = require("node-schedule");
-
 /**
  *    *    *    *    *    *
  ┬    ┬    ┬    ┬    ┬    ┬
@@ -23,8 +21,10 @@ export default class DatabaseBackupSchedule {
      * Constructor of the Backup shedule
      * @param logger
      */
-    constructor(logger) {
+    constructor(logger, models, schedule) {
         this.logger = logger;
+        this.models = models;
+        this.schedule = schedule;
         //this.databaseBackupModule = new DatabaseBackupModule(logger); //the backup module itself
         //this.databaseBackupModule.exportDatabase(); //make a backup every server start
         this.initializeSchedule();
@@ -47,7 +47,7 @@ export default class DatabaseBackupSchedule {
     async initializeBackupchedule() {
         //Execute a cron job at 02 am every day
         const instance = this;
-        let computerSchedule = schedule.scheduleJob("0 0 2 * * *", function () {
+        let computerSchedule = this.schedule.scheduleJob("0 0 2 * * *", function () {
             //instance.databaseBackupModule.exportDatabase();
         });
         this.computerSchedule = computerSchedule;

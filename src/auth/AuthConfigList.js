@@ -1,7 +1,6 @@
 import AuthConnector from "./AuthConnector";
 import MyAccessControl from "./../module/MyAccessControl";
 
-const admins = require("./../../config/admins.json");
 const basicAuth = require("express-basic-auth");
 
 /**
@@ -14,6 +13,12 @@ export default class AuthConfigList {
     static AUTH_NAME = "Config List";
     static PARAM_USERNAME = "username";
     static PARAM_PASSWORD = "password";
+
+    static ADMINS = {};
+
+    static setAdminsFile(admins){
+        AuthConfigList.ADMINS = admins;
+    }
 
     static getNeededAuthParams(){
         return {
@@ -29,8 +34,8 @@ export default class AuthConfigList {
         let username = authObject[AuthConfigList.PARAM_USERNAME];
         let password = authObject[AuthConfigList.PARAM_PASSWORD];
 
-        let foundPassword = admins[username] || password+"Not";
-        let foundUsername = admins.hasOwnProperty(username) ? username : username+"Not";
+        let foundPassword = AuthConfigList.ADMINS[username] || password+"Not";
+        let foundUsername = AuthConfigList.ADMINS.hasOwnProperty(username) ? username : username+"Not";
 
         let passwordMatch = basicAuth.safeCompare(foundPassword,password);
         let usernameMatch = basicAuth.safeCompare(foundUsername,username);

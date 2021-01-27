@@ -49,7 +49,6 @@ var myServerAPILogger,
     mySystemLogger,
     systemLogger,
     expressApp,
-    firebaseAPI,
     myAccessControl,
     myExpressRouter,
     scheduleModule,
@@ -207,7 +206,7 @@ async function prepareMasterServer() {
  */
 function prepareSharedLoggerAndModules(workerID) {
     createSharedLoggers(workerID);
-    scheduleModule = new ScheduleModule(serverAPILogger,models,firebaseAPI,redisClient,cluster.isMaster);
+    scheduleModule = new ScheduleModule(serverAPILogger,models,redisClient,cluster.isMaster);
     createSharedModules();
 }
 
@@ -311,7 +310,6 @@ function createWorkerExpressApp(workerID) {
  * Create Modules everyone will need
  */
 function createSharedModules() {
-    //firebaseAPI = new FirebaseAPI(serverAPILogger, models);
     createRedisClient();
 }
 
@@ -336,7 +334,6 @@ async function createWorkerModules(workerID) {
         workerID,
         serverAPILogger,
         bugReportLogger,
-        firebaseAPI,
         expressApp,
         models,
         myAccessControl.getAccessControlInstance(),

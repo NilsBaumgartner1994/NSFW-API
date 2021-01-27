@@ -6,8 +6,6 @@ import AuthDatabase from "./AuthDatabase";
 import AuthLDAP from "./AuthLDAP";
 import AuthConfigList from "./AuthConfigList";
 
-const config = require("./../../config/config.json")["server"];
-
 export default class AuthConnector {
 
     static AUTH_METHOD = "authMethod";
@@ -21,8 +19,13 @@ export default class AuthConnector {
 
     };
 
-    static configureAuthMethods(){
-        let configAuthMethods = config.auth.methods;
+    constructor(authConfig) {
+        this.config = authConfig;
+        this.configureAuthMethods();
+    }
+
+    configureAuthMethods(){
+        let configAuthMethods = this.config.methods;
         if(!!configAuthMethods.ldap){
             AuthConnector.registerAuthMethod(AuthLDAP);
         }

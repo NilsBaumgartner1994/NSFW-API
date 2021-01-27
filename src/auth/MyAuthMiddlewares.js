@@ -1,5 +1,3 @@
-const config = require("./../../config/config.json")["server"];
-
 import HttpStatus from 'http-status-codes';
 
 import MyTokenHelper from "./MyTokenHelper";
@@ -13,14 +11,14 @@ import AuthConnector from "./AuthConnector";
  */
 export default class MyAuthMiddlewares {
 
-    constructor(workerID, logger, expressApp, routeAuth) {
+    constructor(workerID, logger, expressApp, routeAuth, authConfig) {
         console.log("export default class MyAuthMiddlewares ");
-        console.log(config);
 
         this.logger = logger;
         this.workerID = workerID;
         this.expressApp = expressApp;
         this.routeAuth = routeAuth;
+        this.authConfig = authConfig;
 
         this.routeAuthMethodList = this.routeAuth+"/"+"methods";
         this.routeAuthAccessToken = this.routeAuth+"/"+"accessToken";
@@ -31,7 +29,8 @@ export default class MyAuthMiddlewares {
         this.routeAuthCurrentUser = this.routeAuth+"/"+"currentUser";
 
         this.tokenHelper = new MyTokenHelper(logger); //create the token helper
-        AuthConnector.configureAuthMethods();
+        this.authConnector = new AuthConnector(authConfig);
+        this.authConnector.configureAuthMethods();
         this.configureExpressApp();
     }
 
@@ -126,7 +125,7 @@ export default class MyAuthMiddlewares {
         req.locals.currentUser.role = MyAccessControl.roleNameGuest; //define it as anonymous
 
 
-        if(!!config.auth.disabled){
+        if(!!this.authConfig.disabled){
             req.locals.currentUser.role = MyAccessControl.roleNameAdmin; //better make him then admin
             next();
             return; //abort further checks
@@ -252,7 +251,7 @@ export default class MyAuthMiddlewares {
      */
     async middlewareOnlyAuthenticatedViaRefreshToken(req, res, next) {
         console.log("middlewareOnlyAuthenticatedViaRefreshToken");
-        if(!!config.auth.disabled){
+        if(!!this.authConfig.disabled){
             console.log("Skip, auth is disabled");
             next();
             return;
@@ -310,7 +309,7 @@ export default class MyAuthMiddlewares {
      * @apiParam {String} plaintextSecret User's password as plain text.
      */
     async middlewareOnlyAuthenticatedViaPlaintextSecret(req, res, next) {
-        if(!!config.auth.disabled){
+        if(!!this.authConfig.disabled){
             next();
             return;
         }

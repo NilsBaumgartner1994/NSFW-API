@@ -1,7 +1,5 @@
 import DateHelper from "../helper/DateHelper";
-import config from "../../config/config.json"; //static configs
 
-const schedule = require("node-schedule");
 /**
  *    *    *    *    *    *
  ┬    ┬    ┬    ┬    ┬    ┬
@@ -17,11 +15,8 @@ const schedule = require("node-schedule");
 /**
  * User Incacitivity Schedule will delete old users when they are inactive
  */
+
 export default class UserInactivitySchedule {
-
-    static minutesOfInactivityUntilDeletion = 60 * 24 * config.users.DaysOfInactivityUntilDeletion;
-    static minutesOfInactiviyAfterInactivityMessage = 60 * 24 * config.users.DaysOfInactivityUntilWarningOfDeletion;
-
 
     /**
      * Constructor of User Inactivity Schedule
@@ -29,13 +24,20 @@ export default class UserInactivitySchedule {
      * @param models the sequelize models
      * @param firebaseAPI the firebaseapi to inform users
      */
-    constructor(logger, models, firebaseAPI) {
+    constructor(logger, models, schedule, usersConfig) {
         this.logger = logger;
-        this.logger.info("[UserInactivitySchedule] initialising");
         this.models = models;
-        this.firebaseAPI = firebaseAPI;
+        this.schedule = schedule;
+        this.usersConfig = usersConfig;
+        this.logger.info("[UserInactivitySchedule] initialising");
+        this.configureParams();
         this.initializeSchedule();
         this.logger.info("[UserInactivitySchedule] initialised");
+    }
+
+    configureParams(){
+        this.minutesOfInactivityUntilDeletion = 60 * 24 * this.usersConfig.users.DaysOfInactivityUntilDeletion;
+        this.minutesOfInactiviyAfterInactivityMessage = 60 * 24 * this.usersConfig.users.DaysOfInactivityUntilWarningOfDeletion;
     }
 
     initializeSchedule() {
@@ -77,10 +79,10 @@ export default class UserInactivitySchedule {
         if (!!userLastTimeOnline) { //if there is an online time
             let diffMinutes = DateHelper.diff_minutes_abs(now, userLastTimeOnline); //get online time in minutes
 
-            if (diffMinutes > UserInactivitySchedule.minutesOfInactivityUntilDeletion) { //longer than allowed
+            if (diffMinutes > this.minutesOfInactivityUntilDeletion) { //longer than allowed
                 //well we will delete the User
                 await this.deleteInactiveUser(user);
-            } else if (diffMinutes > UserInactivitySchedule.minutesOfInactiviyAfterInactivityMessage) {
+            } else if (diffMinutes > this.minutesOfInactiviyAfterInactivityMessage) {
                 //well we should inform the User about this deletion in the next days
                 await this.sendUserInactivityMessage(user, "due inactivity your Account will be deleted in the next days!");
             }
@@ -112,8 +114,7 @@ export default class UserInactivitySchedule {
         }
 
         message = "Hey '" + pseudonym + "', " + message;
-        this.firebaseAPI.sendPushNotification([pushNotificationToken], "Inactiviy", message, 0);
-
+        //this.firebaseAPI.sendPushNotification([pushNotificationToken], "Inactiviy", message, 0);
     }
 
     /**
@@ -132,12 +133,12 @@ export default class UserInactivitySchedule {
         user.destroy().then(success => { //destroy the user
             if (!!pushNotificationToken) { //send message if possible
                 let message = "Hey '" + pseudonym + "', you are now deleted :-( Goodby !";
-                this.firebaseAPI.sendPushNotification([pushNotificationToken], "Account Deletion", message, 0);
+                //this.firebaseAPI.sendPushNotification([pushNotificationToken], "Account Deletion", message, 0);
             }
         }).catch(err => {
             if (!!pushNotificationToken) { //on any error
                 let message = "Hey '" + pseudonym + "', we coudnt you delete !? Please report this to us";
-                this.firebaseAPI.sendPushNotification([pushNotificationToken], "Account Deletion", message, 0);
+                //this.firebaseAPI.sendPushNotification([pushNotificationToken], "Account Deletion", message, 0);
             }
             this.logger.error("UserInactivitySchedule");
             this.logger.error(err);

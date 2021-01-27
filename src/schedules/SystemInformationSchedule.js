@@ -27,11 +27,14 @@ export default class SystemInformationSchedule {
     /**
      * Constructor of Environment
      * @param logger the logger for general purpose
-     * @param systemLogger the logger for the machine
+     * @param models
+     * @param schedule
      * @param redisClient the redis client
      */
-    constructor(logger, redisClient) {
+    constructor(logger, models, schedule, redisClient) {
         this.logger = logger;
+        this.models = models;
+        this.schedule = schedule;
         this.logger.info("[SystemInformationSchedule] initialising");
         this.redisClient = redisClient;
         this.logger.info("Created SystemInformationSchedule");

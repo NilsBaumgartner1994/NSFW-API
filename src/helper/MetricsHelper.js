@@ -6,7 +6,7 @@ const fetch = require("node-fetch");
 export default class MetricsHelper {
 
     static async getMetrics(req){
-	let authDyn = req.headers.authorization;
+		let authDyn = req.headers.authorization;
 		let fullUrl = req.protocol + '://' + req.get('host')+"/metrics/metrics";
         let response = await fetch(fullUrl,{
             method: 'GET',
@@ -16,7 +16,7 @@ export default class MetricsHelper {
         });
         let text = await response.text();
         let parsed = MetricsHelper.parseMetrics(text);
-	return parsed;
+		return parsed;
     }
 
     static parseMetrics(rawMetrics){
@@ -26,10 +26,10 @@ export default class MetricsHelper {
 	//filter comments and empty lines
 	let withoutComments = [];
 	for(let i=0; i<splits.length; i++){
-	let row = splits[i];
-	if(row.length > 0 && !row.startsWith("#")){
-	    withoutComments.push(row);
-	}
+		let row = splits[i];
+		if(row.length > 0 && !row.startsWith("#")){
+			withoutComments.push(row);
+		}
 	}
 
 	let keyValues = {};
