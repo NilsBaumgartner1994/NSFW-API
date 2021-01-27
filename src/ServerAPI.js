@@ -16,7 +16,7 @@ import FancyTerminal from "./helper/FancyTerminal";
  * and the server will be started
  */
 
-let config = null;
+let serverConfig = null;
 
 const fs = require("fs"); //file-system
 
@@ -66,8 +66,8 @@ const motd =
 
 export default class ServerAPI {
 
-    constructor(config, models, numCPUs) {
-        this.config = config;
+    constructor(serverConfig, models, numCPUs) {
+        this.serverConfig = serverConfig;
         this.models = models;
         this.numCPUs = numCPUs;
     }
@@ -75,8 +75,8 @@ export default class ServerAPI {
     async start(){
         models = this.models;
         numCPUs = this.numCPUs;
-        config = this.config;
-        redisPort = this.config.redisPort;
+        serverConfig = this.serverConfig;
+        redisPort = this.serverConfig.redisPort;
         await startServer();
     }
 
@@ -137,7 +137,7 @@ async function startServer() {
  * @returns {Promise<void>}
  */
 async function startRedisServer() {
-    if(!config.redisAlreadyRunning){
+    if(!serverConfig.redisAlreadyRunning){
         const server = new RedisServer(redisPort);
         await server.open(err => { //start server
             if (err === null) {
@@ -197,7 +197,7 @@ async function prepareMasterServer() {
     prepareSharedLoggerAndModules(workerID);
     createMasterLoggers(workerID); //keep this order
     createMasterExpressApp();
-    startWorkerServer(config.metricsPort); //we will listen on 9999 and we are a "worker"
+    //startWorkerServer(config.metricsPort); //we will listen on 9999 and we are a "worker"
 }
 
 /**
@@ -206,7 +206,7 @@ async function prepareMasterServer() {
  */
 function prepareSharedLoggerAndModules(workerID) {
     createSharedLoggers(workerID);
-    scheduleModule = new ScheduleModule(serverAPILogger,models,redisClient,cluster.isMaster, config["server"]);
+    scheduleModule = new ScheduleModule(serverAPILogger,models,redisClient,cluster.isMaster, serverConfig);
     createSharedModules();
 }
 
@@ -338,7 +338,7 @@ async function createWorkerModules(workerID) {
         models,
         myAccessControl.getAccessControlInstance(),
         redisClient,
-        config["server"]
+        serverConfig
     );
     await myExpressRouter.configureController(); //configure the routes
 }
@@ -357,7 +357,7 @@ function startWorkerServer(customPort) {
         workerID = cluster.worker.id;
     }
     addWorkerOutput(workerID, "Starting Server ...");
-    let port = config.port;
+    let port = serverConfig.port;
     if (!!customPort) {
         port = customPort;
     }
