@@ -6,7 +6,8 @@
   "scripts": {
     "start": "npm run build && node dist/index.js",
     "build": "rm -rf ./dist/ && webpack --mode development",
-    "doc": "./node_modules/.bin/apidoc -i src/ -i models/ -i doc/customDocumentation/ -o doc/"
+    "doc": "./node_modules/.bin/apidoc -i src/ -i models/ -i doc/customDocumentation/ -o doc/",
+    "upload": "npm run build && npm version patch && npm publish"
   },
   "apidoc": {
     "template": {
