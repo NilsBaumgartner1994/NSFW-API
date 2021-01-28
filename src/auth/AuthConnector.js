@@ -1,9 +1,7 @@
-import AuthMyUOS from "./AuthMyUOS";
 /**
  * The My Express Router which is the core functionality. It setups all controllers and handles routes
  */
 import AuthDatabase from "./AuthDatabase";
-import AuthLDAP from "./AuthLDAP";
 import AuthConfigList from "./AuthConfigList";
 
 export default class AuthConnector {
@@ -26,17 +24,11 @@ export default class AuthConnector {
 
     configureAuthMethods(){
         let configAuthMethods = this.config.methods;
-        if(!!configAuthMethods.ldap){
-            AuthConnector.registerAuthMethod(AuthLDAP);
-        }
         if(!!configAuthMethods.configList){
             AuthConnector.registerAuthMethod(AuthConfigList);
         }
         if(!!configAuthMethods.database){
             AuthConnector.registerAuthMethod(AuthDatabase);
-        }
-        if(!!configAuthMethods.myuos){
-            AuthConnector.registerAuthMethod(AuthMyUOS);
         }
     }
 

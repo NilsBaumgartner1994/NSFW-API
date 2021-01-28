@@ -172,7 +172,11 @@ export default class MyAccessControl {
     initAdminPermissions() {
         let ac = this.getAccessControlInstance();
         ac.grant(MyAccessControl.roleNameAdmin).extend(MyAccessControl.roleNameSuperModerator);
+        this.grantRoleAllPermissions(MyAccessControl.roleNameAdmin);
+    }
 
+    grantRoleAllPermissions(role){
+        let ac = this.getAccessControlInstance();
         let tableNames = SequelizeHelper.getModelTableNames(this.models);
         let associationNames = SequelizeAssociationController.getForAllModelsAllAccessControlAssociationResources(this.models);
         let totalAdminPermission = tableNames.concat(associationNames);
@@ -184,10 +188,10 @@ export default class MyAccessControl {
 
         for (let i = 0; i < totalAdminPermission.length; i++) { //for all permissions allow everything
             let accessControl = totalAdminPermission[i];
-            ac.grant(MyAccessControl.roleNameAdmin).createAny(accessControl, ['*']);
-            ac.grant(MyAccessControl.roleNameAdmin).readAny(accessControl, ['*']);
-            ac.grant(MyAccessControl.roleNameAdmin).updateAny(accessControl, ['*']);
-            ac.grant(MyAccessControl.roleNameAdmin).deleteAny(accessControl, ['*']);
+            ac.grant(role).createAny(accessControl, ['*']);
+            ac.grant(role).readAny(accessControl, ['*']);
+            ac.grant(role).updateAny(accessControl, ['*']);
+            ac.grant(role).deleteAny(accessControl, ['*']);
         }
     }
 }

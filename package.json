@@ -28,7 +28,7 @@
   },
   "homepage": "https://github.com/NilsBaumgartner1994/NSFW-API#readme",
   "author": "Nils Baumgartner",
-  "license": "No Licence",
+  "license": "MIT",
   "dependencies": {
     "@babel/plugin-proposal-dynamic-import": "^7.12.1",
     "@babel/plugin-proposal-export-namespace-from": "^7.12.1",
