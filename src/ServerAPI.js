@@ -8,6 +8,7 @@ import MyAccessControl from "./module/MyAccessControl"; //Database handler
 import MyExpressRouter from "./module/MyExpressRouter"; //Routing Module
 import MyLogger from "./module/MyLogger"; //Logger Module
 import FancyTerminal from "./helper/FancyTerminal";
+import SequelizeModelLoader from "./helper/SequelizeModelLoader";
 
 /**
  * ServerAPI Starts here
@@ -66,9 +67,11 @@ const motd = "\n" +
 
 export default class ServerAPI {
 
-    constructor(serverConfig, models, numCPUs) {
+    constructor(serverConfig, sequelizeConfig, pathToModels, numCPUs) {
         this.serverConfig = serverConfig;
-        this.models = models;
+        //this.sequelizeConfig = sequelizeConfig;
+        //this.pathToModels = pathToModels;
+        this.models = SequelizeModelLoader.loadModelsInstance(sequelizeConfig, pathToModels);
         this.numCPUs = isNaN(numCPUs) ? os.cpus().length : numCPUs;
     }
 

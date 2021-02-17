@@ -6,7 +6,7 @@ module.exports = {
   externals: [
     nodeExternals({modulesFromFile: true,})
   ],
-  entry: ['./src/index.js'],
+  entry: ['./src/modules.js'],
   node: {
     fs: 'empty',
     child_process: 'empty',
