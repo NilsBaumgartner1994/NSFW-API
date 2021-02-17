@@ -11,11 +11,10 @@ import AuthConnector from "./AuthConnector";
  */
 export default class MyAuthMiddlewares {
 
-    constructor(workerID, logger, expressApp, routeAuth, authConfig) {
+    constructor(logger, expressApp, routeAuth, authConfig) {
         console.log("export default class MyAuthMiddlewares ");
 
         this.logger = logger;
-        this.workerID = workerID;
         this.expressApp = expressApp;
         this.routeAuth = routeAuth;
         this.authConfig = authConfig;
@@ -115,9 +114,8 @@ export default class MyAuthMiddlewares {
      */
     middlewareAuthToken(req, res, next) {
         const logger = this.logger;
-        const workerID = this.workerID;
 
-        this.logger.info("[" + workerID + "][MyExpressRouter] middlewareAuthToken - url: " + req.url);
+        this.logger.info("[MyExpressRouter] middlewareAuthToken - url: " + req.url);
         //console.log("URL: "+req.url);
 
         req.locals = req.locals || {};
@@ -170,7 +168,7 @@ export default class MyAuthMiddlewares {
         } catch (err) { //no headers found or some wrong headers provided
 
             console.log(err);
-            logger.error("[" + workerID + "][MyExpressRouter] middlewareAuthToken - " + err.toString());
+            logger.error("[MyExpressRouter] middlewareAuthToken - " + err.toString());
             next();
         }
     }

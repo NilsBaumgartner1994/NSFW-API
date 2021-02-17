@@ -58,7 +58,7 @@ export default class AuthDatabase {
                                 if (correct) { //if thats a valid password
                                     req.locals.currentUser.id = user.id; //set id
                                     req.locals.currentUser.role = MyAccessControl.roleNameUser; //and lowest role
-                                    this.logger.info("[" + this.workerID + "][MyExpressRouter] middlewareOnlyAuthenticatedViaPlaintextSecret - user_id: " + user_id + " correct plaintext");
+                                    this.logger.info("[MyExpressRouter] middlewareOnlyAuthenticatedViaPlaintextSecret - user_id: " + user_id + " correct plaintext");
 
                                     this.models.UserRole.findOne({where: {UserId: user.id}}).then(userroleEntry => { //but mayby he has a role ?
                                         if (!!userroleEntry) { //if a userrole entry exists
@@ -68,17 +68,17 @@ export default class AuthDatabase {
                                                     req.locals.currentUser.role = role.name; //the the role name in it
                                                 }
                                                 //okay unkown role id found?
-                                                this.logger.info("[" + this.workerID + "][MyExpressRouter] middlewareOnlyAuthenticatedViaPlaintextSecret - user_id: " + user_id + " as special role: " + req.locals.currentUser.role);
+                                                this.logger.info("[MyExpressRouter] middlewareOnlyAuthenticatedViaPlaintextSecret - user_id: " + user_id + " as special role: " + req.locals.currentUser.role);
                                                 next();
                                             }).catch(err => {
-                                                this.logger.error("[" + this.workerID + "][MyExpressRouter] middlewareOnlyAuthenticatedViaPlaintextSecret - " + err.toString());
+                                                this.logger.error("[MyExpressRouter] middlewareOnlyAuthenticatedViaPlaintextSecret - " + err.toString());
                                             });
                                         } else { //no special entry for user, but still a valid user
-                                            this.logger.info("[" + this.workerID + "][MyExpressRouter] middlewareOnlyAuthenticatedViaPlaintextSecret - user_id: " + user_id + " as default role: " + req.locals.currentUser.role);
+                                            this.logger.info("[MyExpressRouter] middlewareOnlyAuthenticatedViaPlaintextSecret - user_id: " + user_id + " as default role: " + req.locals.currentUser.role);
                                             next();
                                         }
                                     }).catch(err => {
-                                        this.logger.error("[" + this.workerID + "][MyExpressRouter] middlewareOnlyAuthenticatedViaPlaintextSecret - " + err.toString());
+                                        this.logger.error("[MyExpressRouter] middlewareOnlyAuthenticatedViaPlaintextSecret - " + err.toString());
                                         MyExpressRouter.responseWithErrorJSON(res, HttpStatus.INTERNAL_SERVER_ERROR, {message:err.toString()});
                                     })
                                 } else {
@@ -86,12 +86,12 @@ export default class AuthDatabase {
                                 }
                             }
                         }).catch(err => {
-                            this.logger.error("[" + this.workerID + "][MyExpressRouter] middlewareOnlyAuthenticatedViaPlaintextSecret - " + err.toString());
+                            this.logger.error("[MyExpressRouter] middlewareOnlyAuthenticatedViaPlaintextSecret - " + err.toString());
                             MyExpressRouter.responseWithErrorJSON(res, HttpStatus.INTERNAL_SERVER_ERROR, {message:err.toString()});
                         });
                     }
                 }).catch(err => {
-                    this.logger.error("[" + this.workerID + "][MyExpressRouter] middlewareOnlyAuthenticatedViaPlaintextSecret - " + err.toString());
+                    this.logger.error("[MyExpressRouter] middlewareOnlyAuthenticatedViaPlaintextSecret - " + err.toString());
                     MyExpressRouter.responseWithErrorJSON(res, HttpStatus.INTERNAL_SERVER_ERROR, {message:err.toString()});
                 });
             } else { //no user id given

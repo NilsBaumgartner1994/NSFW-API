@@ -67,20 +67,31 @@ const motd = "\n" +
 
 export default class ServerAPI {
 
+    static MESSAGE_TYPE_CONSOLE = "Console";
+    static MESSAGE_TYPE_COMMAND = "Command";
+
     constructor(serverConfig, sequelizeConfig, pathToModels, numCPUs) {
         this.serverConfig = serverConfig;
         //this.sequelizeConfig = sequelizeConfig;
         //this.pathToModels = pathToModels;
-        this.models = SequelizeModelLoader.loadModelsInstance(sequelizeConfig, pathToModels);
         this.numCPUs = isNaN(numCPUs) ? os.cpus().length : numCPUs;
     }
 
     async start(){
+        this.models = SequelizeModelLoader.loadModelsInstance(sequelizeConfig, pathToModels);
         models = this.models;
         numCPUs = this.numCPUs;
         serverConfig = this.serverConfig;
         redisPort = this.serverConfig.redisPort;
         await startServer();
+    }
+
+    static getWorkderId(){
+        if (cluster.isWorker) {
+            return cluster.worker.id;
+        } else {
+            return "Master"
+        }
     }
 
 }
@@ -92,19 +103,22 @@ export default class ServerAPI {
 /**
  * Adds Logging output
  * @param workerID the worker ID or name
+ * @param type the type of the message, null for console log
  * @param message The message
  * @returns {Promise<void>}
  */
-async function addWorkerOutput(workerID, message) {
+async function sendToMaster(workerID, type, message) {
+    if (!workerID) { // if we receive
+        workerID = ServerAPI.getWorkderId();
+    }
     if (cluster.isWorker) {
-        process.send({workerID: cluster.worker.id, message: message});
+        process.send({workerID: workerID, type: type, message: message});
         return;
     }
-    if (!workerID) { // then this is master
-        workerID = "Master";
-    }
 
-    FancyTerminal.addWorkerOutput(workerID, message);
+    if(!type || type===ServerAPI.MESSAGE_TYPE_CONSOLE){
+        FancyTerminal.addWorkerOutput(workerID, message);
+    }
 }
 
 /**
@@ -119,15 +133,15 @@ async function startServer() {
 
         await startRedisServer(); //start the redis server
 
-        addWorkerOutput(null, "Models synchronizing ...");
+        sendToMaster(null, null, "Models synchronizing ...");
         models.sequelize
         .sync()
         .then(async function () { //model sync finished
-            addWorkerOutput(null, "Models synchronized");
+            sendToMaster(null, null, "Models synchronized");
             createCluster();
         })
         .catch(function (error) { //models cant be synced
-            addWorkerOutput(null, "Error at Model Sync");
+            sendToMaster(null, null, "Error at Model Sync");
             console.log(error.toString());
         });
     } else { //this is not the master then we dont need to reconfigure everything
@@ -147,7 +161,7 @@ async function startRedisServer() {
                 // You may now connect a client to the Redis
                 // server bound to port 6379.
             } else {
-                addWorkerOutput(null, "Error at starting Redis Server: " + err);
+                sendToMaster(null, null, "Error at starting Redis Server: " + err);
             }
         });
     }
@@ -160,14 +174,15 @@ async function startRedisServer() {
  */
 async function configureFork(cp) {
     cp.on("exit", (code, signal) => {
-        addWorkerOutput(null, "Some worker died :-(, let's revive him !");
+        sendToMaster(null, null, "Some worker died :-(, let's revive him !");
         let revived = cluster.fork();
         configureFork(revived);
     });
     cp.on("message", msg => { //if cluster sends message to master
         const workerID = msg.workerID;
         const message = msg.message;
-        addWorkerOutput(workerID, message); //master will add the output
+        const type = msg.type;
+        sendToMaster(workerID, type, message); //master will add the output
     });
 }
 
@@ -177,12 +192,12 @@ async function configureFork(cp) {
  */
 async function createCluster() {
     if (cluster.isMaster) {
-        addWorkerOutput(null, "Cluster Master starting");
+        sendToMaster(null, null, "Cluster Master starting");
 
         // Fork workers.
         let cp = null;
         for (let i = 0; i < numCPUs; i++) { //every core should become a worker
-            addWorkerOutput(null, "Cluster create Worker: " + i);
+            sendToMaster(null, null, "Cluster create Worker: " + i);
             cp = cluster.fork();
             configureFork(cp); //configure it
         }
@@ -195,20 +210,18 @@ async function createCluster() {
  * @returns {Promise<void>}
  */
 async function prepareMasterServer() {
-    let workerID = "Master";
-    addWorkerOutput(workerID, "prepareMasterServer");
-    prepareSharedLoggerAndModules(workerID);
-    createMasterLoggers(workerID); //keep this order
+    sendToMaster(null, null, "prepareMasterServer");
+    prepareSharedLoggerAndModules();
+    createMasterLoggers(); //keep this order
     createMasterExpressApp();
     //startWorkerServer(config.metricsPort); //we will listen on 9999 and we are a "worker"
 }
 
 /**
  * Prepare shared Loggers and modules
- * @param workerID
  */
-function prepareSharedLoggerAndModules(workerID) {
-    createSharedLoggers(workerID);
+function prepareSharedLoggerAndModules() {
+    createSharedLoggers();
     scheduleModule = new ScheduleModule(serverAPILogger,models,redisClient,cluster.isMaster, serverConfig);
     createSharedModules();
 }
@@ -218,15 +231,11 @@ function prepareSharedLoggerAndModules(workerID) {
  * @returns {Promise<void>}
  */
 async function prepareWorkerServer() {
-    let workerID = "Master";
-    if (cluster.isWorker) { //if we are a fork, get our id
-        workerID = cluster.worker.id;
-    }
-    addWorkerOutput(workerID, "prepare Server");
-    prepareSharedLoggerAndModules(workerID);
-    createWorkerLoggers(workerID); //keep this order
-    createWorkerExpressApp(workerID);
-    await createWorkerModules(workerID);
+    sendToMaster(null, null, "prepare Server");
+    prepareSharedLoggerAndModules();
+    createWorkerLoggers(); //keep this order
+    createWorkerExpressApp();
+    await createWorkerModules();
     startWorkerServer();
 }
 
@@ -236,36 +245,33 @@ async function prepareWorkerServer() {
 
 /**
  * Create API Logger which everyone will use
- * @param workerID the worker id
  */
-function createSharedLoggers(workerID) {
-    addWorkerOutput(workerID, "createSharedLoggers");
-    myServerAPILogger = new MyLogger("ServerAPI", workerID);
+function createSharedLoggers() {
+    sendToMaster(null, null, "createSharedLoggers");
+    myServerAPILogger = new MyLogger("ServerAPI");
     serverAPILogger = myServerAPILogger.getLogger();
 }
 
 /**
  * Create the loggers specially for the forks/workers
- * @param workerID the worker id
  */
-function createWorkerLoggers(workerID) {
-    addWorkerOutput(workerID, "Creating Loggers");
+function createWorkerLoggers() {
+    sendToMaster(null, null, "Creating Loggers");
 
-    myBugReportLogger = new MyLogger("BugReport", workerID);
+    myBugReportLogger = new MyLogger("BugReport");
     bugReportLogger = myBugReportLogger.getLogger();
 }
 
 /**
  * Create the loggers which only the master will need
- * @param workerID
  */
-function createMasterLoggers(workerID) {
-    addWorkerOutput(workerID, "Creating Master Loggers");
+function createMasterLoggers() {
+    sendToMaster(null, null, "Creating Master Loggers");
 
-    myEnvironmentLogger = new MyLogger("Environment", workerID);
+    myEnvironmentLogger = new MyLogger("Environment");
     environmentLogger = myEnvironmentLogger.getLogger();
 
-    mySystemLogger = new MyLogger("System", workerID);
+    mySystemLogger = new MyLogger("System");
     systemLogger = mySystemLogger.getLogger();
 }
 
@@ -277,7 +283,7 @@ function createMasterLoggers(workerID) {
  * Create an Express App for the master
  */
 function createMasterExpressApp() {
-    addWorkerOutput("Master", "Creating Master Express App");
+    sendToMaster("Master", "Creating Master Express App");
     expressApp = new Express();
     expressApp.use(cors()); //we allow cross origin
     expressApp.use(cors({credentials: true, origin: true}));
@@ -285,10 +291,9 @@ function createMasterExpressApp() {
 
 /**
  * Create an Express App for the workers
- * @param workerID
  */
-function createWorkerExpressApp(workerID) {
-    addWorkerOutput(workerID, "Creating ExpressApp");
+function createWorkerExpressApp() {
+    sendToMaster(null, null, "Creating ExpressApp");
     expressApp = new Express();
     expressApp.use(cors()); // we allow cross orign
 
@@ -322,19 +327,17 @@ function createSharedModules() {
 function createRedisClient() {
     redisClient = redis.createClient(redisPort);
     redisClient.on("error", err => {
-        addWorkerOutput(null, err);
+        sendToMaster(null, null, err);
     });
 }
 
 /**
  * Create worker Modules
- * @param workerID the worker ID
  */
-async function createWorkerModules(workerID) {
-    addWorkerOutput(workerID, "creating Modules");
+async function createWorkerModules() {
+    sendToMaster(null, null, "creating Modules");
     myAccessControl = new MyAccessControl(serverAPILogger, models);
     myExpressRouter = new MyExpressRouter(
-        workerID,
         serverAPILogger,
         bugReportLogger,
         expressApp,
@@ -355,18 +358,14 @@ async function createWorkerModules(workerID) {
  * @param customPort if a specific port if wanted, this can be used
  */
 function startWorkerServer(customPort) {
-    let workerID = "Master";
-    if (cluster.isWorker) {
-        workerID = cluster.worker.id;
-    }
-    addWorkerOutput(workerID, "Starting Server ...");
+    sendToMaster(null, null, "Starting Server ...");
     let port = serverConfig.port;
     if (!!customPort) {
         port = customPort;
     }
 
     if (cluster.isMaster) {
-        addWorkerOutput("Master", "Master Server ready on port: " + port);
+        sendToMaster("Master", "Master Server ready on port: " + port);
     }
 
     const env = process.env.NODE_ENV || "production"; //get the enviroment
@@ -377,7 +376,7 @@ function startWorkerServer(customPort) {
 	    if (err) {
 	        return console.error(err);
 	    }
-	    addWorkerOutput(workerID, `Server running on http://localhost:${port} [${env}]}`);
+	    sendToMaster(null, null, `Server running on http://localhost:${port} [${env}]}`);
 
 	});
 }

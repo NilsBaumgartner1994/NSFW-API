@@ -1,3 +1,5 @@
+import ServerAPI from "../ServerAPI";
+
 const {createLogger, format, transports} = require('winston');
 require('winston-daily-rotate-file');
 const {combine, timestamp, label, printf} = format;
@@ -12,9 +14,8 @@ export default class MyLogger {
     /**
      * Constructor of a logger
      * @param folderName the folder name
-     * @param workerID the workerID
      */
-    constructor(folderName, workerID) {
+    constructor(folderName) {
         const pathToGeneralLogFolder = "./logs/"; //get path of logs
         FileSystemHelper.mkdirpath(pathToGeneralLogFolder); //create it if it does not exist
 
@@ -47,6 +48,7 @@ export default class MyLogger {
             })
         );
 
+        let workerID = ServerAPI.getWorkderId();
         const customLabel = "Worker: " + workerID + " - " + folderName; //the format will be defined here
 
         this.logger = createLogger({

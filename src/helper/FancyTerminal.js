@@ -36,7 +36,6 @@ export default class FancyTerminal {
     /**
      * If you dont Like the Fancy Output and want to stay classic edit your desired output here. It will directly print
      * to the console
-     * @param workerID The worker ID of the fork
      * @param message The message of the worker
      * @returns {Promise<void>}
      */

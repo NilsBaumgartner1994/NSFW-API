@@ -81,7 +81,6 @@ export default class MyExpressRouter {
 
     /**
      * Constructor of the MyExpressRouter
-     * @param workerID The worker ID, since there are cluster workers
      * @param logger The logger class
      * @param bugReportLogger The bug Report logger
      * @param expressApp the express app itseld
@@ -89,8 +88,7 @@ export default class MyExpressRouter {
      * @param myAccessControl the access controll instance
      * @param redisClient the redis client
      */
-    constructor(workerID, logger, bugReportLogger, expressApp, models, myAccessControl, redisClient, serverConfig) {
-        this.workerID = workerID;
+    constructor(logger, bugReportLogger, expressApp, models, myAccessControl, redisClient, serverConfig) {
         this.logger = logger;
         this.serverConfig = serverConfig;
         this.logger.info("[MyExpressRouter] initialising");
@@ -103,11 +101,10 @@ export default class MyExpressRouter {
         // !!BEFORE any other things, otherwise body content wont be parsed
 
         let authConfig = serverConfig["auth"];
-        this.myAuthMiddlewares = new MyAuthMiddlewares(workerID, logger, expressApp, MyExpressRouter.routeAuth, authConfig);
+        this.myAuthMiddlewares = new MyAuthMiddlewares(logger, expressApp, MyExpressRouter.routeAuth, authConfig);
         //create the token helper
         //!!AFTER configureExpressApp, otherwise body content wont be parsed ...
 
-        console.log("new CustomControllers(workerID...");
         this.configurePublicParamCheckers();
         this.configurePublicRoutes();
 

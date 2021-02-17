@@ -70,11 +70,10 @@ export default class DefaultControllerHelper {
      * Since there exists a TableUpdateTimes Table which records the dates at which other tables where updated at, this function helps to update the entry for a given table.
      * @param tableName The table name which should be known to be updated
      * @param models The models
-     * @param workerID The workerId which will be used for error logging
      * @param logger The logger which will be used to log
      * @returns {Promise<void>}
      */
-    static async updateTableUpdateTimesByTableNameAndModels(tableName, models, workerID, logger) {
+    static async updateTableUpdateTimesByTableNameAndModels(tableName, models, logger) {
         try {
             let resource = await models.TableUpdateTimes.findOne({where: {tableName: tableName}}); //find the table
             if (!!resource) { //if unkown tablename in tableupdatetimes
@@ -85,7 +84,7 @@ export default class DefaultControllerHelper {
                 await resource.save(); //save it
             }
         } catch (err) {
-            logger.error("[" + workerID + "][DefaultControllerHelper] updateTableUpdateTimes - " + err.toString());
+            logger.error("[DefaultControllerHelper] updateTableUpdateTimes - " + err.toString());
         }
     }
 
@@ -202,7 +201,7 @@ export default class DefaultControllerHelper {
      * @returns {Promise<void>}
      */
     async updateTableUpdateTimesByTableName(tableName) {
-        await DefaultControllerHelper.updateTableUpdateTimesByTableNameAndModels(tableName, this.models, this.myExpressRouter.workerID, this.logger);
+        await DefaultControllerHelper.updateTableUpdateTimesByTableNameAndModels(tableName, this.models, this.logger);
     }
 
     /**
@@ -432,7 +431,7 @@ export default class DefaultControllerHelper {
         let permission = DefaultControllerHelper.getPermission(req,myAccessControl,accessControlResource,DefaultControllerHelper.CRUD_CREATE,isOwn);
 
 
-        this.logger.info("[" + this.myExpressRouter.workerID + "][DefaultControllerHelper] handleCreate - " + accessControlResource + " currentUser: " + req.locals.currentUser.id + " granted: " + permission.granted);
+        this.logger.info("[DefaultControllerHelper] handleCreate - " + accessControlResource + " currentUser: " + req.locals.currentUser.id + " granted: " + permission.granted);
         if (permission.granted) { //check if allowed to create the resource
             console.log("permission granted");
             await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_CREATE,true);
@@ -446,7 +445,7 @@ export default class DefaultControllerHelper {
                 return savedResource;
             }).catch(err => {
                 console.log(err);
-                this.logger.error("[" + this.myExpressRouter.workerID + "][DefaultControllerHelper] handleCreate - " + err.toString());
+                this.logger.error("[DefaultControllerHelper] handleCreate - " + err.toString());
                 DefaultControllerHelper.respondWithInternalErrorMessage(req,res,err);
                 return null;
             });
@@ -538,11 +537,11 @@ export default class DefaultControllerHelper {
 
         let isOwn = DefaultControllerHelper.getOwningState(req,accessControlResource);
         let permission = DefaultControllerHelper.getPermission(req,myAccessControl,accessControlResource,DefaultControllerHelper.CRUD_UPDATE,isOwn);
-        this.logger.info("[" + this.myExpressRouter.workerID + "][DefaultControllerHelper] handleUpdate - " + accessControlResource + " currentUser: " + req.locals.currentUser.id + " granted: " + permission.granted);
+        this.logger.info("[DefaultControllerHelper] handleUpdate - " + accessControlResource + " currentUser: " + req.locals.currentUser.id + " granted: " + permission.granted);
         if (permission.granted) { //can update resource
-            this.logger.info("[" + this.myExpressRouter.workerID + "][DefaultControllerHelper] handleUpdate - " + accessControlResource + " currentUser:" + req.locals.currentUser.id + " body: " + JSON.stringify(req.body));
+            this.logger.info("[DefaultControllerHelper] handleUpdate - " + accessControlResource + " currentUser:" + req.locals.currentUser.id + " body: " + JSON.stringify(req.body));
             let allowedAttributesToUpdate = DefaultControllerHelper.getFilteredReqBodyByPermission(req,myAccessControl,accessControlResource,DefaultControllerHelper.CRUD_UPDATE, isOwn)
-            this.logger.info("[" + this.myExpressRouter.workerID + "][DefaultControllerHelper] handleUpdate - " + accessControlResource + " currentUser:" + req.locals.currentUser.id + " allowedAttributesToUpdate: " + JSON.stringify(allowedAttributesToUpdate));
+            this.logger.info("[DefaultControllerHelper] handleUpdate - " + accessControlResource + " currentUser:" + req.locals.currentUser.id + " allowedAttributesToUpdate: " + JSON.stringify(allowedAttributesToUpdate));
             await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_UPDATE,true);
             sequelizeResource.update(allowedAttributesToUpdate).then(async (updatedResource) => { //update resource
                 await DefaultControllerHelper.executeHookFunctions(updatedResource,accessControlResource,DefaultControllerHelper.CRUD_UPDATE,false);
@@ -550,7 +549,7 @@ export default class DefaultControllerHelper {
                 this.handleGet(req, res, myAccessControl, accessControlResource);
                 this.updateTableUpdateTimes(sequelizeResource.constructor, updateTableUpdateTimes);
             }).catch(err => {
-                this.logger.error("[" + this.myExpressRouter.workerID + "][DefaultControllerHelper] handleUpdate - " + err.toString());
+                this.logger.error("[DefaultControllerHelper] handleUpdate - " + err.toString());
                 DefaultControllerHelper.respondWithInternalErrorMessage(req,res,err);
             });
         } else {
@@ -583,7 +582,7 @@ export default class DefaultControllerHelper {
 
         let isOwn = DefaultControllerHelper.getOwningState(req,accessControlResource);
         let permission = DefaultControllerHelper.getPermission(req,myAccessControl,accessControlResource,DefaultControllerHelper.CRUD_DELETE,isOwn);
-        this.logger.info("[" + this.myExpressRouter.workerID + "][DefaultControllerHelper] handleDelete - " + accessControlResource + " currentUser: " + req.locals.currentUser.id + " granted: " + permission.granted);
+        this.logger.info("[DefaultControllerHelper] handleDelete - " + accessControlResource + " currentUser: " + req.locals.currentUser.id + " granted: " + permission.granted);
         if (permission.granted) { //can delete resource
             let constructor = sequelizeResource.constructor; //get constructor for table update times
             await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_DELETE,true);
@@ -592,7 +591,7 @@ export default class DefaultControllerHelper {
                 DefaultControllerHelper.respondWithDeleteMessage(req, res);
                 this.updateTableUpdateTimes(constructor, updateTableUpdateTimes);
             }).catch(err => {
-                this.logger.error("[" + this.myExpressRouter.workerID + "][DefaultControllerHelper] handleDelete - " + accessControlResource + " " + err.toString());
+                this.logger.error("[DefaultControllerHelper] handleDelete - " + accessControlResource + " " + err.toString());
                 DefaultControllerHelper.respondWithInternalErrorMessage(req,res,err);
             });
         } else {
