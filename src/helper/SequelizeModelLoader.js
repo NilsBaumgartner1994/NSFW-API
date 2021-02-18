@@ -22,10 +22,9 @@ export default class SequelizeModelLoader {
 
         let sequelize = SequelizeModelLoader._getSequelizeInstance(sequelizeConfig);
 
-        if(!pathToModels){
+        if(!!pathToModels){
             let modelEnding = ".js";
             let modelEndingLength = modelEnding.length;
-        } else {
             fs
                 .readdirSync(pathToModels)
                 .filter(file => {
