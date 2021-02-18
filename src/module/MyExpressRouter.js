@@ -9,6 +9,7 @@ import DateHelper from "../helper/DateHelper";
 import DefaultControllerHelper from "../helper/DefaultControllerHelper";
 import MyAuthMiddlewares from "../auth/MyAuthMiddlewares";
 import CustomControllers from "../controllers/CustomControllers";
+import ServerController from "../controllers/ServerController";
 
 const { promisify } = require("util");
 
@@ -33,6 +34,7 @@ export default class MyExpressRouter {
     static routeModels = MyExpressRouter.urlAPI+"/models";
     static routeSchemes = MyExpressRouter.urlAPI+"/schemes";
     static routeAuth = MyExpressRouter.urlAPI + "/auth"; //Route to authenticate
+    static routeServer = MyExpressRouter.urlAPI+"/server"; //Routes to Server Functions like Restart
     static routeCustom = MyExpressRouter.urlAPI+"/custom"; //Routes to custom API Endpoints
 
     /**
@@ -272,6 +274,8 @@ export default class MyExpressRouter {
 
         this.sequelizeController = new SequelizeController(logger,models,expressApp,myAccessControl,instance);
         this.sequelizeSchemeController = new SequelizeSchemeController(logger,models,expressApp,myAccessControl,instance);
+
+        this.serverController = new ServerController(logger,models,expressApp,myAccessControl,instance, MyExpressRouter.routeServer);
 
         this.customController = new CustomControllers(logger, models, expressApp, myAccessControl, instance, MyExpressRouter.routeCustom); //create controller for custom endpoints
 
