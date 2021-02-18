@@ -7,7 +7,7 @@
     "start": "npm run build && node dist/src/development.js",
     "build": "rm -rf ./dist/ && webpack --mode development",
     "doc": "./node_modules/.bin/apidoc -i src/ -i models/ -i doc/customDocumentation/ -o doc/",
-    "upload": "npm run build && npm version patch && npm publish"
+    "upload": "npm run build && rm -rf ./dist/src/development.js && npm version patch && npm publish"
   },
   "apidoc": {
     "template": {
