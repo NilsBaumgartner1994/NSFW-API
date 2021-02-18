@@ -2,7 +2,7 @@
   "name": "nsfw-api",
   "version": "1.0.24",
   "description": "NodeJS Sequelize FrameWork API",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "start": "npm run build && node dist/src/development.js",
     "build": "rm -rf ./dist/ && webpack --mode development",
