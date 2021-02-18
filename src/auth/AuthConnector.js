@@ -24,11 +24,13 @@ export default class AuthConnector {
 
     configureAuthMethods(){
         let configAuthMethods = this.config.methods;
-        if(!!configAuthMethods.configList){
-            AuthConnector.registerAuthMethod(AuthConfigList);
-        }
-        if(!!configAuthMethods.database){
-            AuthConnector.registerAuthMethod(AuthDatabase);
+        if(!!configAuthMethods){
+            if(!!configAuthMethods.configList){
+                AuthConnector.registerAuthMethod(AuthConfigList);
+            }
+            if(!!configAuthMethods.database){
+                AuthConnector.registerAuthMethod(AuthDatabase);
+            }
         }
     }
 

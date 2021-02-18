@@ -72,13 +72,15 @@ export default class ServerAPI {
 
     constructor(serverConfig, sequelizeConfig, pathToModels, numCPUs) {
         this.serverConfig = serverConfig;
+        this.sequelizeConfig = sequelizeConfig;
+        this.pathToModels = pathToModels;
         //this.sequelizeConfig = sequelizeConfig;
         //this.pathToModels = pathToModels;
         this.numCPUs = isNaN(numCPUs) ? os.cpus().length : numCPUs;
     }
 
     async start(){
-        this.models = SequelizeModelLoader.loadModelsInstance(sequelizeConfig, pathToModels);
+        this.models = SequelizeModelLoader.loadModelsInstance(this.sequelizeConfig, this.pathToModels);
         models = this.models;
         numCPUs = this.numCPUs;
         serverConfig = this.serverConfig;

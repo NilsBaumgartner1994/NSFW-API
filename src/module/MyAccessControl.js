@@ -125,7 +125,10 @@ export default class MyAccessControl {
      */
     initGuestPermissions() {
         let ac = this.getAccessControlInstance();
-        ac.grant(MyAccessControl.roleNameGuest).createOwn(this.models.User.tableName, ["plaintextSecret"]);
+        if(!!this.models.User){
+            ac.grant(MyAccessControl.roleNameGuest).createOwn(this.models.User.tableName, ["plaintextSecret"]);
+        }
+
     }
 
     /**
@@ -138,9 +141,12 @@ export default class MyAccessControl {
     initUserPermissions() {
         let ac = this.getAccessControlInstance();
         ac.grant(MyAccessControl.roleNameUser).extend(MyAccessControl.roleNameGuest);
-        ac.grant(MyAccessControl.roleNameUser).readOwn(this.models.User.tableName, ['id', 'onlineTime', 'privacyPolicyReadDate', 'pseudonym', 'avatar', 'language']);
-        ac.grant(MyAccessControl.roleNameUser).updateOwn(this.models.User.tableName, ['pseudonym', 'avatar', '!privacyPolicyReadDate', 'language']); // user is not allowed to change privacyPoliceReadDate manualy
-        ac.grant(MyAccessControl.roleNameUser).deleteOwn(this.models.User.tableName);
+        if(!!this.models.User){
+            ac.grant(MyAccessControl.roleNameUser).readOwn(this.models.User.tableName, ['id', 'onlineTime', 'privacyPolicyReadDate', 'pseudonym', 'avatar', 'language']);
+            ac.grant(MyAccessControl.roleNameUser).updateOwn(this.models.User.tableName, ['pseudonym', 'avatar', '!privacyPolicyReadDate', 'language']); // user is not allowed to change privacyPoliceReadDate manualy
+            ac.grant(MyAccessControl.roleNameUser).deleteOwn(this.models.User.tableName);
+        }
+
     }
 
     /**

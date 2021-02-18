@@ -6,14 +6,17 @@ module.exports = {
   externals: [
     nodeExternals({modulesFromFile: true,})
   ],
-  entry: ['./src/modules.js'],
+  entry: {
+    './src/index': './src/index.js',
+    './src/development': './src/development.js',
+  },
   node: {
     fs: 'empty',
     child_process: 'empty',
   },
   output: {
     path: __dirname + "/dist",
-    filename: 'index.js',
+    filename: '[name].js',
     libraryTarget: 'commonjs2',
   },
   module: {

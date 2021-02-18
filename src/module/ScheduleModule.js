@@ -1,4 +1,3 @@
-import DatabaseBackupSchedule from "../schedules/DatabaseBackupSchedule";
 import UserInactivitySchedule from "../schedules/UserInactivitySchedule";
 import SystemInformationSchedule from "../schedules/SystemInformationSchedule";
 
@@ -38,7 +37,6 @@ export default class ScheduleModule {
      */
     createSchedules(isMaster){
         if(isMaster) {
-            this.databaseBackupSchedule = new DatabaseBackupSchedule(this.logger, this.models, schedule, this.serverConfig); //we need a database backup schedule
             this.userInactiviySchedule = new UserInactivitySchedule( //a user inactivity checker
                 this.logger,
                 this.models,
