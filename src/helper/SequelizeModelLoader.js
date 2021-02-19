@@ -1,3 +1,5 @@
+import ServerAPI from "../ServerAPI";
+
 const Sequelize = require('sequelize');
 const path = require('path');
 const fs = require('fs');
@@ -17,7 +19,7 @@ export default class SequelizeModelLoader {
         }
     }
 
-    static loadModelsInstance(sequelizeConfig, pathToModels){
+    static async loadModelsInstance(sequelizeConfig, pathToModels){
         const db = {};
 
         let sequelize = SequelizeModelLoader._getSequelizeInstance(sequelizeConfig);
@@ -41,6 +43,11 @@ export default class SequelizeModelLoader {
                     db[modelName].associate(db);
                 }
             });
+        }
+
+        if(!sequelizeConfig){ //if using sqlite::memory database
+            //we cant loose any data
+            await sequelize.sync({force: true}); //we should create the tables by given models
         }
 
         db.sequelize = sequelize;

@@ -3,6 +3,7 @@ import MyExpressRouter from "../module/MyExpressRouter";
 import SequelizeHelper from "../helper/SequelizeHelper";
 import SequelizeRouteHelper from "../helper/SequelizeRouteHelper";
 import DefaultControllerHelper from "../helper/DefaultControllerHelper";
+import MyAccessControl from "../module/MyAccessControl";
 
 export default class SequelizeSchemeController {
 
@@ -94,7 +95,7 @@ export default class SequelizeSchemeController {
                 let associationObject = tableAssociations[modelAssociationName].options;
                 let associationTargetModel = tableAssociations[modelAssociationName].target;
 
-                let accessControlAssociationResource = "Association"+tableName+modelAssociationName;
+                let accessControlAssociationResource = MyAccessControl.getAccessControlResourceOfAssociation(tableName,modelAssociationName);
                 let pluralName = associationObject["name"]["plural"];
                 if(modelsWithPermission.includes(accessControlAssociationResource)){
                     filteredAssociationData[modelAssociationName] = {

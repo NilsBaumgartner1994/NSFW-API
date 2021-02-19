@@ -36,6 +36,8 @@ let numCPUs = os.cpus().length;
 const redis = require("redis"); //for caching
 const cors = require("cors"); // for cross origin allow support
 
+const SIGNAL_PEACEFULL_SHUTDOWN = "SIGTERM";
+
 let models = null;
 
 const RedisServer = require("redis-server"); //redis server for caching requests
@@ -69,9 +71,9 @@ export default class ServerAPI {
 
     static MESSAGE_TYPE_CONSOLE = "Console";
     static MESSAGE_TYPE_COMMAND = "Command";
+    static COMMAND_RESTART = "Restart";
 
     constructor(serverConfig, sequelizeConfig, pathToModels, numCPUs) {
-        console.log("CONSTRUCTOR START");
         this.serverConfig = serverConfig;
         this.sequelizeConfig = sequelizeConfig;
         this.pathToModels = pathToModels;
@@ -81,7 +83,7 @@ export default class ServerAPI {
     }
 
     async start(){
-        this.models = SequelizeModelLoader.loadModelsInstance(this.sequelizeConfig, this.pathToModels);
+        this.models = await SequelizeModelLoader.loadModelsInstance(this.sequelizeConfig, this.pathToModels);
         models = this.models;
         numCPUs = this.numCPUs;
         serverConfig = this.serverConfig;
@@ -110,21 +112,29 @@ export default class ServerAPI {
         }
 
         if (cluster.isWorker) {
-            process.send({workerID: workerID, type: type, message: message});
+            const test = require('net').createServer();
+            test.on('connection', (socket) => {
+                socket.end('handled by parent');
+            });
+            process.send({workerID: workerID, type: type, message: message}, test);
             return;
         }
 
         if(!type || type===ServerAPI.MESSAGE_TYPE_CONSOLE){
             return await FancyTerminal.addWorkerOutput(workerID, message);
-
         }
         if(type === ServerAPI.MESSAGE_TYPE_COMMAND){
-            console.log("YOOOOO Command received");
-            console.log(message);
-            killWorkers();
-
-            return;
+            if(message === ServerAPI.COMMAND_RESTART){
+                ServerAPI.sendToMaster(null, null, "Restarting all Workers");
+                await shutdownWorkers(SIGNAL_PEACEFULL_SHUTDOWN);
+                createCluster();
+                return;
+            }
         }
+    }
+
+    static async restartWorkers(){
+        await ServerAPI.sendToMaster(null, ServerAPI.MESSAGE_TYPE_COMMAND, ServerAPI.COMMAND_RESTART);
     }
 
 }
@@ -151,6 +161,7 @@ async function startServer() {
         .then(async function () { //model sync finished
             ServerAPI.sendToMaster(null, null, "Models synchronized");
             createCluster();
+            prepareMasterServer(); //after that is finished set ourself up
         })
         .catch(function (error) { //models cant be synced
             ServerAPI.sendToMaster(null, null, "Error at Model Sync");
@@ -161,24 +172,48 @@ async function startServer() {
     }
 }
 
-function killWorker(worker)
-{
-    return function() {
-        worker.destroy();
-    };
-}
+function shutdownWorkers(signal){
+    //https://medium.com/@gaurav.lahoti/graceful-shutdown-of-node-js-workers-dd58bbff9e30
+    ServerAPI.sendToMaster(null, null, "Workers are now being shut down");
+    return new Promise((resolve, reject) => {
+        if (!cluster.isMaster) { return resolve() }
 
-function killWorkers()
-{
-    let delay = 0;
-    for (let id in cluster.workers) {
-        let func = killWorker(cluster.workers[id]);
-        if(delay==0)
-            func();
-        else
-            setTimeout(func, delay);
-        delay += 1000 * 1;// 1sec delay
-    }
+        const wIds = Object.keys(cluster.workers)
+        if (wIds.length === 0) { return resolve() }
+        //Filter all the valid workers
+        let workers = [];
+        for(let i=0; i<wIds.length; i++){
+            let id = wIds[i];
+            let worker = cluster.workers[id];
+            workers.push(worker);
+        }
+
+        let workersAlive = 0
+        let funcRun = 0
+
+        //Count the number of alive workers and keep looping until the number is zero.
+        const fn = () => {
+            ++funcRun
+            workersAlive = 0
+            workers.forEach(worker => {
+                if (!worker.isDead()) {
+                    ++workersAlive
+                    if (funcRun === 1) {
+                        //On the first execution of the function, send the received signal to all the workers
+                        worker.kill(signal);
+                        worker.destroy();
+                    }
+                }
+            })
+            ServerAPI.sendToMaster(null, null, workersAlive + " workers alive");
+            if (workersAlive === 0) {
+                //Clear the interval when all workers are dead
+                clearInterval(interval)
+                return resolve()
+            }
+        }
+        const interval = setInterval(fn, 500)
+    })
 }
 
 /**
@@ -202,38 +237,47 @@ async function startRedisServer() {
 /**
  * Configure a Cluster Worker
  * @param cp cluster worker
- * @returns {Promise<void>}
  */
-async function configureFork(cp) {
-    cp.on("exit", (code, signal) => {
-        ServerAPI.sendToMaster(null, null, "Some worker died :-(, let's revive him !");
-        let revived = cluster.fork();
-        configureFork(revived);
-    });
-    cp.on("message", msg => { //if cluster sends message to master
-        const workerID = msg.workerID;
-        const message = msg.message;
-        const type = msg.type;
-        ServerAPI.sendToMaster(workerID, type, message); //master will add the output
-    });
+function configureFork(cp) {
+    if (cluster.isMaster) {
+        cp.on("exit", (code, signal) => {
+            //MASTER THREAD START
+            if(signal===SIGNAL_PEACEFULL_SHUTDOWN){
+                ServerAPI.sendToMaster(null, null, "A worker peacefully shutdown");
+            } else {
+                ServerAPI.sendToMaster(null, null, "Exit of a worker");
+                ServerAPI.sendToMaster(null, null, "code: "+code+" | signal: "+signal);
+                ServerAPI.sendToMaster(null, null, "Let's revive him !");
+                spawnWorker();
+            }
+            //MASTER THREAD END
+        });
+        cp.on("message", (msg, handle) => { //if cluster sends message to master
+            const workerID = msg.workerID;
+            const message = msg.message;
+            const type = msg.type;
+            ServerAPI.sendToMaster(workerID, type, message); //master will add the output
+        });
+    }
+}
+
+function spawnWorker(){
+    let cp = cluster.fork();
+    configureFork(cp); //configure it
 }
 
 /**
  * Create Cluster with multiple workers
- * @returns {Promise<void>}
  */
-async function createCluster() {
+function createCluster() {
     if (cluster.isMaster) {
         ServerAPI.sendToMaster(null, null, "Cluster Master starting");
 
         // Fork workers.
-        let cp = null;
         for (let i = 0; i < numCPUs; i++) { //every core should become a worker
             ServerAPI.sendToMaster(null, null, "Cluster create Worker: " + i);
-            cp = cluster.fork();
-            configureFork(cp); //configure it
+            spawnWorker();
         }
-        prepareMasterServer(); //after that is finished set ourself up
     }
 }
 
@@ -255,7 +299,7 @@ async function prepareMasterServer() {
  */
 function prepareSharedLoggerAndModules() {
     createSharedLoggers();
-    scheduleModule = new ScheduleModule(serverAPILogger,models,redisClient,cluster.isMaster, serverConfig);
+    scheduleModule = new ScheduleModule(serverAPILogger,models,redisClient, serverConfig);
     createSharedModules();
 }
 

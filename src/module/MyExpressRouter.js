@@ -10,6 +10,7 @@ import DefaultControllerHelper from "../helper/DefaultControllerHelper";
 import MyAuthMiddlewares from "../auth/MyAuthMiddlewares";
 import CustomControllers from "../controllers/CustomControllers";
 import ServerController from "../controllers/ServerController";
+import ServerAPI from "../ServerAPI";
 
 const { promisify } = require("util");
 
@@ -30,6 +31,7 @@ export default class MyExpressRouter {
      ************ Routes *******************
      **************************************/
     static routeVersion = MyExpressRouter.urlAPI + "/version";
+    static routeTime = MyExpressRouter.urlAPI + "/time";
     static routeFunctions = MyExpressRouter.urlAPI + "/functions";
     static routeModels = MyExpressRouter.urlAPI+"/models";
     static routeSchemes = MyExpressRouter.urlAPI+"/schemes";
@@ -94,6 +96,7 @@ export default class MyExpressRouter {
         this.logger = logger;
         this.serverConfig = serverConfig;
         this.logger.info("[MyExpressRouter] initialising");
+        this.startTime = new Date();
         this.models = models;
         this.expressApp = expressApp;
         this.myAccessControl = myAccessControl;
@@ -253,6 +256,10 @@ export default class MyExpressRouter {
         this.expressApp.get("/loaderio-4fffcfb2d8504b146819ec8df3a58421/", this.handleVerification.bind(this));
 
         this.expressApp.get(MyExpressRouter.routeVersion, this.handleVersionRequest.bind(this));
+        this.expressApp.get(MyExpressRouter.routeTime, this.handleTimeRequest.bind(this));
+
+
+
         this.expressApp.get(MyExpressRouter.custom_routeSystemInformation, this.handleSystemInformationGetRequest.bind(this));
         //this.expressApp.get(MyExpressRouter.custom_routeMetrics, this.handleMetricsRequest.bind(this));
     }
@@ -352,7 +359,7 @@ export default class MyExpressRouter {
             try {
                 console.log("handleShowAllEndpoints");
                 let expressApp = this.expressApp;
-                let endpoints = expressApp.router.stack;
+                let endpoints = expressApp._router.stack;
                 let answer = endpoints;
                 MyExpressRouter.responseWithSuccessJSON(res, answer);
             } catch (err) {
@@ -392,6 +399,29 @@ export default class MyExpressRouter {
         let answer = {version: version};
         MyExpressRouter.responseWithSuccessJSON(res, answer);
 
+    }
+
+
+    /**
+     * Get the starttime and current time of the current worker instance
+     * @param req the request object
+     * @param res the response object
+     *
+     * @api {get} /api/time Get the API version
+     * @apiDescription Get the current time of the worker thread and the start time of the worker
+     * @apiName GetAPIVersion
+     * @apiPermission Anonym
+     * @apiGroup 4Custom
+     *
+     * @apiSuccess {String} version The actual version of the Server API.
+     *
+     * @apiExample Example usage:
+     * curl -i http://localhost/api/time
+     */
+    handleTimeRequest(req, res) {
+        let startTime = this.startTime
+        let answer = {startTime: startTime, currentTime: new Date(), workerId: ServerAPI.getWorkderId()};
+        MyExpressRouter.responseWithSuccessJSON(res, answer);
     }
 
     /**

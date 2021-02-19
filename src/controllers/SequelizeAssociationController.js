@@ -4,6 +4,7 @@ import SequelizeHelper from "../helper/SequelizeHelper";
 import SequelizeRouteHelper from "../helper/SequelizeRouteHelper";
 import SequelizeController from "./SequelizeController";
 import DefaultControllerHelper from "../helper/DefaultControllerHelper";
+import MyAccessControl from "../module/MyAccessControl";
 
 export default class SequelizeAssociationController {
 
@@ -38,7 +39,7 @@ export default class SequelizeAssociationController {
         let modelAssociationNames = SequelizeAssociationController.getModelAssociationNames(model);
         for(let j=0; j<modelAssociationNames.length; j++) {
             let modelAssociationName = modelAssociationNames[j];
-            let accessControlAssociationResource = "Association" + tableName + modelAssociationName;
+            let accessControlAssociationResource = MyAccessControl.getAccessControlResourceOfAssociation(tableName,modelAssociationName);
             accessControlAssociationResources = accessControlAssociationResources.concat(accessControlAssociationResource);
         }
         return accessControlAssociationResources;
@@ -67,7 +68,7 @@ export default class SequelizeAssociationController {
 
             let hasManyAssociated = pluralName === modelAssociationName;
 
-            let accessControlAssociationResource = "Association"+tableName+modelAssociationName;
+            let accessControlAssociationResource = MyAccessControl.getAccessControlResourceOfAssociation(tableName,modelAssociationName);
 
             if(hasManyAssociated){ // e.G. User has many Feedbacks
                 //configure the params for identifing the associated resource
@@ -121,13 +122,14 @@ export default class SequelizeAssociationController {
 
         let associationFunction = methodName+modelAssociationName;
         let tableName = SequelizeHelper.getTableName(model);
+        let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
 
         //console.log("Configure Count Associtation: "+tableName+" "+associationFunction+" ");
         let functionForModel = async function(req, res){ //define the get function
 
             //TODO Permission
 
-            let resource = req.locals[tableName];
+            let resource = req.locals[accessControlResource];
             let amount = await resource[associationFunction]();
             let dataJSON = {
                 count: amount
@@ -142,10 +144,9 @@ export default class SequelizeAssociationController {
 
     configureMultipleAssociationsIndexRoute(model,modelAssociationName,associationModel,accessControlAssociationResource){
         let associationFunction = "get"+modelAssociationName;
-        let tableName = SequelizeHelper.getTableName(model);
         let functionForModel = async function(req, res){ //define the get function
             //TODO maybe use: DefaultControllerHelper.handleAssociationIndex
-            let resource = req.locals[tableName];
+            let resource = req.locals[accessControlAssociationResource];
             this.myExpressRouter.defaultControllerHelper.handleAssociationIndex(req,res,resource,this.myAccessControl,accessControlAssociationResource,modelAssociationName,associationFunction,false)
         }
 
@@ -173,13 +174,14 @@ export default class SequelizeAssociationController {
     configureMultipleAssociationsRemoveSpecificRoute(model,modelAssociationName,associationModel,accessControlAssociationResource,singularName) {
         //console.log("configure association route: configureMultipleAssociationsGetSpecificRoute");
         let tableName = SequelizeHelper.getTableName(model);
+        let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
         let associatedTableName = SequelizeHelper.getTableName(associationModel);
 
         let functionForModel = async function (req, res) { //define the get function
             //just call the default GET
             let permission = DefaultControllerHelper.getPermission(req,this.myAccessControl,accessControlAssociationResource,DefaultControllerHelper.CRUD_DELETE,false);
             if(permission.granted){
-                let resource = req.locals[tableName];
+                let resource = req.locals[accessControlResource];
                 let associatedResource = req.locals[accessControlAssociationResource];
 
                 let isAssociated = await resource["has"+singularName](associatedResource);
@@ -211,13 +213,14 @@ export default class SequelizeAssociationController {
     configureMultipleAssociationsAddSpecificRoute(model,modelAssociationName,associationModel,accessControlAssociationResource,singularName) {
         //console.log("configure association route: configureMultipleAssociationsAddSpecificRoute");
         let tableName = SequelizeHelper.getTableName(model);
+        let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
         let associatedTableName = SequelizeHelper.getTableName(associationModel);
 
         let functionForModel = async function (req, res) { //define the get function
             //just call the default GET
             let permission = DefaultControllerHelper.getPermission(req,this.myAccessControl,accessControlAssociationResource,DefaultControllerHelper.CRUD_CREATE,false);
             if(permission.granted){
-                let resource = req.locals[tableName];
+                let resource = req.locals[accessControlResource];
                 let associatedResource = req.locals[accessControlAssociationResource];
 
                 let isAssociated = await resource["has"+singularName](associatedResource);
@@ -249,6 +252,7 @@ export default class SequelizeAssociationController {
 
         let associationFunction = methodName+modelAssociationName;
         let tableName = SequelizeHelper.getTableName(model);
+        let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
 
         //console.log("Configure Get Associtation: "+tableName+" "+associationFunction+" ");
         let functionForModel = async function(req, res){ //define the get function
@@ -256,12 +260,11 @@ export default class SequelizeAssociationController {
             //TODO Permission
            // console.log("handle SingleAssociationGetRoute");
 
-            let resource = req.locals[tableName];
+            let resource = req.locals[accessControlResource];
             let associationResource = await resource[associationFunction]();
             if(!!associationResource) {
-                let reqLocalsKey = accessControlAssociationResource;
-                req.locals[reqLocalsKey] = associationResource; //save the found resource
-                await DefaultControllerHelper.setOwningState(req, reqLocalsKey);
+                req.locals[accessControlAssociationResource] = associationResource; //save the found resource
+                await DefaultControllerHelper.setOwningState(req, accessControlAssociationResource);
                 this.myExpressRouter.defaultControllerHelper.handleGet(req, res, this.myAccessControl, accessControlAssociationResource);
                 return;
             } else {
@@ -280,6 +283,7 @@ export default class SequelizeAssociationController {
 
     configureSingleAssociationRemoveRoute(model, singularName, modelAssociationName, accessControlAssociationResource){
         let tableName = SequelizeHelper.getTableName(model);
+        let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
 
         //console.log("Configure remove Associtation: "+tableName);
         let functionForModel = async function(req, res){ //define the get function
@@ -287,7 +291,7 @@ export default class SequelizeAssociationController {
             let permission = DefaultControllerHelper.getPermission(req,this.myAccessControl,accessControlAssociationResource,DefaultControllerHelper.CRUD_DELETE,false);
             if(permission.granted){
                 //console.log("Permission granted");
-                let resource = req.locals[tableName];
+                let resource = req.locals[accessControlResource];
                 let isAssociated = await resource["set"+singularName](null);
                 //console.log(isAssociated);
                 //console.log("Maybe that not correct ?");
@@ -311,6 +315,7 @@ export default class SequelizeAssociationController {
 
     configureSingleAssociationSetRoute(model, singularName, modelAssociationName, accessControlAssociationResource,associationModel){
         let tableName = SequelizeHelper.getTableName(model);
+        let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
 
         let methodName = "get";
         let associationFunction = methodName+modelAssociationName;
@@ -320,7 +325,7 @@ export default class SequelizeAssociationController {
 
             let permission = DefaultControllerHelper.getPermission(req,this.myAccessControl,accessControlAssociationResource,DefaultControllerHelper.CRUD_CREATE,false);
             if(permission.granted){
-                let resource = req.locals[tableName];
+                let resource = req.locals[accessControlResource];
 
                 let currentAssociationResource = await resource[associationFunction]();
                 if(!!currentAssociationResource){

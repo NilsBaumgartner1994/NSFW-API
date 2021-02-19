@@ -1,5 +1,6 @@
 import UserInactivitySchedule from "../schedules/UserInactivitySchedule";
 import SystemInformationSchedule from "../schedules/SystemInformationSchedule";
+import * as cluster from "cluster";
 
 const schedule = require("node-schedule");
 
@@ -19,24 +20,23 @@ export default class ScheduleModule {
      * @param logger The logger class
      * @param models the sequelize models
      * @param redisClient
-     * @param isMaster
      * @param serverConfig
      */
-    constructor(logger,models, redisClient, isMaster, serverConfig) {
+    constructor(logger,models, redisClient, serverConfig) {
         this.logger = logger;
         this.logger.info("[ScheduleModule] initialising");
         this.models = models;
         this.redisClient = redisClient;
         this.serverConfig = serverConfig;
-        this.createSchedules(isMaster);
+        this.createSchedules();
         this.logger.info("[ScheduleModule] initialised");
     }
 
     /**
      * Initializes all schedules
      */
-    createSchedules(isMaster){
-        if(isMaster) {
+    createSchedules(){
+        if(cluster.isMaster) {
             this.userInactiviySchedule = new UserInactivitySchedule( //a user inactivity checker
                 this.logger,
                 this.models,

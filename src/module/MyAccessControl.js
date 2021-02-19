@@ -21,7 +21,7 @@ export default class MyAccessControl {
     static roleNameAdmin = "admin";
     static roleNameOwner = "owner";
 
-    static accessControl
+    static accessControl;
 
     /**
      * Constructor
@@ -36,6 +36,14 @@ export default class MyAccessControl {
         this.initialisePermissions(); // load permissions
         this.logger.info("[MyAccessControl] initialised");
 
+    }
+
+    static getAccessControlResourceOfTablename(tablename){
+        return "RESOURCE_"+tablename;
+    }
+
+    static getAccessControlResourceOfAssociation(tablename, associationname){
+        return "ASSOCIATION_"+tablename+"_"+associationname;
     }
 
     /**
@@ -181,11 +189,22 @@ export default class MyAccessControl {
         this.grantRoleAllPermissions(MyAccessControl.roleNameAdmin);
     }
 
+    static getAllAccessControlResourcesOfModels(models){
+        let tableNames = SequelizeHelper.getModelTableNames(models);
+        let accessControlResources = [];
+        for(let i=0; i<tableNames.length; i++){
+            let tableName = tableNames[i];
+            let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
+            accessControlResources.push(accessControlResource)
+        }
+        return accessControlResources;
+    }
+
     grantRoleAllPermissions(role){
         let ac = this.getAccessControlInstance();
-        let tableNames = SequelizeHelper.getModelTableNames(this.models);
+        let accessControlResources = MyAccessControl.getAllAccessControlResourcesOfModels(this.models);
         let associationNames = SequelizeAssociationController.getForAllModelsAllAccessControlAssociationResources(this.models);
-        let totalAdminPermission = tableNames.concat(associationNames);
+        let totalAdminPermission = accessControlResources.concat(associationNames);
 
         let functionPermissions = [MyExpressRouter.adminRoutes_accessControlResource];
         totalAdminPermission = totalAdminPermission.concat(functionPermissions);

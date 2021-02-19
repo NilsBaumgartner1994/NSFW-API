@@ -348,7 +348,6 @@ export default class DefaultControllerHelper {
      * @param sequelizeModel The Model we want to make an index
      * @param myAccessControl The Access Control
      * @param accessControlResource The resource name for checking in the access control
-     * @param resourceName The resource name for logging
      * @param includeModels Optional include models which should be added too. Beware ! No Permission filtering for these
      * @param redisKey Optional a Redis Key, for to look up in cache.
      * @param customPermission use custom permission instead
@@ -358,15 +357,13 @@ export default class DefaultControllerHelper {
      * @apiError (Error) {Number} errorCode The HTTP-Code of the error. Possible Errors: FORBIDDEN, INTERNAL_SERVER_ERROR
      * @apiError (Error) {String} error A description of the error
      */
-    async handleIndex(req, res, sequelizeModel, myAccessControl, accessControlResource, includeModels = [], redisKey, customPermission) {
-        let permission = DefaultControllerHelper.getPermission(req,myAccessControl,accessControlResource,DefaultControllerHelper.CRUD_READ,false);
+    async handleIndex(req, res, sequelizeModel, myAccessControl, accessControlResource, includeModels = [], redisKey=null, customPermission=null) {
+        let permission = DefaultControllerHelper.handleDefaultPermissionCheck(res, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_READ, false);
         if(!!customPermission){
             permission = customPermission;
         }
+
         if (permission.granted) { //can you read any of this resource ?
-            console.log("HandleIndex permitted");
-            console.log("redisClient");
-            console.log(redisClient);
             let redisClient = MyExpressRouter.redisClient; //get the client
             if(!!redisKey && !DefaultControllerHelper.isQueryInRequest(req)){
                 let role = req.locals.currentUser.role; //get users role
@@ -403,9 +400,6 @@ export default class DefaultControllerHelper {
                     DefaultControllerHelper.respondWithInternalErrorMessage(req,res,err);
                 });
             }
-        } else {
-            DefaultControllerHelper.respondWithForbiddenMessage(req,res,"Get "+accessControlResource);
-
         }
     }
 
@@ -428,8 +422,7 @@ export default class DefaultControllerHelper {
         console.log("DefaultHandler handleCreate");
         let isOwn = DefaultControllerHelper.getOwningState(req,accessControlResource);
         console.log("is own: "+isOwn);
-        let permission = DefaultControllerHelper.getPermission(req,myAccessControl,accessControlResource,DefaultControllerHelper.CRUD_CREATE,isOwn);
-
+        let permission = DefaultControllerHelper.handleDefaultPermissionCheck(res, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_CREATE, isOwn);
 
         this.logger.info("[DefaultControllerHelper] handleCreate - " + accessControlResource + " currentUser: " + req.locals.currentUser.id + " granted: " + permission.granted);
         if (permission.granted) { //check if allowed to create the resource
@@ -449,9 +442,6 @@ export default class DefaultControllerHelper {
                 DefaultControllerHelper.respondWithInternalErrorMessage(req,res,err);
                 return null;
             });
-        } else {
-            DefaultControllerHelper.respondWithForbiddenMessage(req,res,"Create "+accessControlResource);
-            return null;
         }
     }
 
@@ -464,16 +454,16 @@ export default class DefaultControllerHelper {
         }
     }
 
-    static async setOwningStateForResource(req,tableName,resource){
-        req.locals["own"+tableName] = await DefaultControllerHelper.evalOwningState(req,resource);
+    static async setOwningStateForResource(req,accessControlResource,resource){
+        req.locals["own"+accessControlResource] = await DefaultControllerHelper.evalOwningState(req,resource);
     }
 
-    static async setOwningState(req,tableName){
-        await DefaultControllerHelper.setOwningStateForResource(req,tableName,req.locals[tableName]);
+    static async setOwningState(req,accessControlResource){
+        await DefaultControllerHelper.setOwningStateForResource(req,accessControlResource,req.locals[accessControlResource]);
     }
 
-    static getOwningState(req,tableName){
-        return req.locals["own"+tableName];
+    static getOwningState(req,accessControlResource){
+        return req.locals["own"+accessControlResource];
     }
 
     /**
@@ -501,13 +491,12 @@ export default class DefaultControllerHelper {
         }
 
         let isOwn = DefaultControllerHelper.getOwningState(req,accessControlResource);
-        let permission = DefaultControllerHelper.getPermission(req,myAccessControl,accessControlResource,DefaultControllerHelper.CRUD_READ,isOwn);
-        if (permission.granted) { //can read/get resource
+
+        let permission = DefaultControllerHelper.handleDefaultPermissionCheck(res, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_UPDATE, isOwn);
+        if(permission.granted){
             await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_READ,true);
             DefaultControllerHelper.respondWithPermissionFilteredResource(req, res, sequelizeResource, permission);
             await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_READ,false);
-        } else {
-            DefaultControllerHelper.respondWithForbiddenMessage(req,res,"Get "+accessControlResource);
         }
     }
 
@@ -536,9 +525,9 @@ export default class DefaultControllerHelper {
         let sequelizeResource = req.locals[accessControlResource]; //get the resource
 
         let isOwn = DefaultControllerHelper.getOwningState(req,accessControlResource);
-        let permission = DefaultControllerHelper.getPermission(req,myAccessControl,accessControlResource,DefaultControllerHelper.CRUD_UPDATE,isOwn);
-        this.logger.info("[DefaultControllerHelper] handleUpdate - " + accessControlResource + " currentUser: " + req.locals.currentUser.id + " granted: " + permission.granted);
-        if (permission.granted) { //can update resource
+
+        let permission = DefaultControllerHelper.handleDefaultPermissionCheck(res, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_UPDATE, isOwn);
+        if(permission.granted){
             this.logger.info("[DefaultControllerHelper] handleUpdate - " + accessControlResource + " currentUser:" + req.locals.currentUser.id + " body: " + JSON.stringify(req.body));
             let allowedAttributesToUpdate = DefaultControllerHelper.getFilteredReqBodyByPermission(req,myAccessControl,accessControlResource,DefaultControllerHelper.CRUD_UPDATE, isOwn)
             this.logger.info("[DefaultControllerHelper] handleUpdate - " + accessControlResource + " currentUser:" + req.locals.currentUser.id + " allowedAttributesToUpdate: " + JSON.stringify(allowedAttributesToUpdate));
@@ -552,9 +541,6 @@ export default class DefaultControllerHelper {
                 this.logger.error("[DefaultControllerHelper] handleUpdate - " + err.toString());
                 DefaultControllerHelper.respondWithInternalErrorMessage(req,res,err);
             });
-        } else {
-            DefaultControllerHelper.respondWithForbiddenMessage(req,res,"Update "+accessControlResource);
-
         }
     }
 
@@ -565,8 +551,6 @@ export default class DefaultControllerHelper {
      * @param res The resonse object
      * @param myAccessControl The Access Control
      * @param accessControlResource The resource name for checking in the access control
-     * @param resourceName The resource name for logging
-     * @param isOwn if the currentUser owns the resource
      * @param updateTableUpdateTimes Boolean if the table update times should be updated
      * @returns {Promise<void>}
      *
@@ -581,9 +565,9 @@ export default class DefaultControllerHelper {
     	//console.log("Found Resource: "+!!sequelizeResource);
 
         let isOwn = DefaultControllerHelper.getOwningState(req,accessControlResource);
-        let permission = DefaultControllerHelper.getPermission(req,myAccessControl,accessControlResource,DefaultControllerHelper.CRUD_DELETE,isOwn);
-        this.logger.info("[DefaultControllerHelper] handleDelete - " + accessControlResource + " currentUser: " + req.locals.currentUser.id + " granted: " + permission.granted);
-        if (permission.granted) { //can delete resource
+        let permission = DefaultControllerHelper.handleDefaultPermissionCheck(res, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_DELETE, isOwn);
+        if(permission.granted){
+            this.logger.info("[DefaultControllerHelper] handleDelete - " + accessControlResource + " currentUser: " + req.locals.currentUser.id + " granted: " + permission.granted);
             let constructor = sequelizeResource.constructor; //get constructor for table update times
             await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_DELETE,true);
             sequelizeResource.destroy().then(async (amountDeletedResources) => { //ignoring the amount of deletions
@@ -594,9 +578,16 @@ export default class DefaultControllerHelper {
                 this.logger.error("[DefaultControllerHelper] handleDelete - " + accessControlResource + " " + err.toString());
                 DefaultControllerHelper.respondWithInternalErrorMessage(req,res,err);
             });
-        } else {
-            DefaultControllerHelper.respondWithForbiddenMessage(req,res,"Delete "+accessControlResource);
         }
+    }
+
+    static handleDefaultPermissionCheck(req, res, myAccessControl,accessControlResource,crudOperation,isOwn=false){
+        let permission = DefaultControllerHelper.getPermission(req,myAccessControl,accessControlResource,crudOperation,isOwn);
+        if (!permission.granted){
+            DefaultControllerHelper.respondWithForbiddenMessage(req,res,crudOperation+" "+accessControlResource);
+            return permission;
+        }
+        return permission;
     }
 
     static getPermission(req,myAccessControl,accessControlResource,crudOperation,isOwn=false){

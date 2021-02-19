@@ -4,6 +4,7 @@ import SequelizeHelper from "../helper/SequelizeHelper";
 import SequelizeRouteHelper from "../helper/SequelizeRouteHelper";
 import SequelizeAssociationController from "./SequelizeAssociationController";
 import DefaultControllerHelper from "../helper/DefaultControllerHelper";
+import MyAccessControl from "../module/MyAccessControl";
 
 export default class SequelizeController {
 
@@ -47,10 +48,11 @@ export default class SequelizeController {
 
     configureCount(model){
         let tableName = SequelizeHelper.getTableName(model);
+        let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
 
         let functionForModel = function(req, res) { //define the index function
             //just call the default index
-            this.myExpressRouter.defaultControllerHelper.handleCount(req, res, model, this.myAccessControl, tableName);
+            this.myExpressRouter.defaultControllerHelper.handleCount(req, res, model, this.myAccessControl, accessControlResource);
         }
 
         let route = SequelizeRouteHelper.getCountRoute(model); //get the index route
@@ -64,10 +66,12 @@ export default class SequelizeController {
      */
     configureIndex(model){
         let tableName = SequelizeHelper.getTableName(model);
+        console.log("Configure Index for: "+tableName);
+        let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
 
         let functionForModel = function(req, res) { //define the index function
             //just call the default index
-            this.myExpressRouter.defaultControllerHelper.handleIndex(req, res, model, this.myAccessControl, tableName);
+            this.myExpressRouter.defaultControllerHelper.handleIndex(req, res, model, this.myAccessControl, accessControlResource);
         }
 
         let route = SequelizeRouteHelper.getIndexRoute(model); //get the index route
@@ -80,13 +84,14 @@ export default class SequelizeController {
      */
     configureCreate(model){
         let tableName = SequelizeHelper.getTableName(model);
+        let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
 
         let functionForModel = async function(req, res) { //define the index function
             let isOwn = false;
 
             try{
                 let modelForOwnTest = model.build(req.body); //play as everything would be allowed
-                await DefaultControllerHelper.setOwningStateForResource(req,tableName,modelForOwnTest)
+                await DefaultControllerHelper.setOwningStateForResource(req,accessControlResource,modelForOwnTest)
             } catch(err){
                 console.log("If the error is isOwn is not found, then ignore"); //TODO remove after testing
                 console.log(err);
@@ -96,12 +101,12 @@ export default class SequelizeController {
             //get the allowed attributes to change
             //console.log("passed req");
             //console.log(req);
-            let allowedAttributes = DefaultControllerHelper.getFilteredReqBodyByPermission(req,this.myAccessControl,tableName,DefaultControllerHelper.CRUD_CREATE,isOwn);
+            let allowedAttributes = DefaultControllerHelper.getFilteredReqBodyByPermission(req,this.myAccessControl,accessControlResource,DefaultControllerHelper.CRUD_CREATE,isOwn);
             let sequelizeResource = model.build(allowedAttributes); //build model with allowed attributes
             //console.log(sequelizeResource);
 
             //create them
-            this.myExpressRouter.defaultControllerHelper.handleCreate(req, res, sequelizeResource, this.myAccessControl, tableName);
+            this.myExpressRouter.defaultControllerHelper.handleCreate(req, res, sequelizeResource, this.myAccessControl, accessControlResource);
         }
 
         let route = SequelizeRouteHelper.getIndexRoute(model); //get the index route
@@ -114,10 +119,11 @@ export default class SequelizeController {
      */
     configureGet(model){
         let tableName = SequelizeHelper.getTableName(model);
+        let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
 
         let functionForModel = function(req, res){ //define the get function
             //just call the default GET
-            this.myExpressRouter.defaultControllerHelper.handleGet(req, res, this.myAccessControl, tableName);
+            this.myExpressRouter.defaultControllerHelper.handleGet(req, res, this.myAccessControl, accessControlResource);
         }
 
         let route = SequelizeRouteHelper.getInstanceRoute(model); // get the GET route
@@ -131,10 +137,11 @@ export default class SequelizeController {
      */
     configureDelete(model){
         let tableName = SequelizeHelper.getTableName(model);
+        let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
 
         let functionForModel = function(req, res){ //define the get function
             //just call the default DELETE
-            this.myExpressRouter.defaultControllerHelper.handleDelete(req, res, this.myAccessControl, tableName);
+            this.myExpressRouter.defaultControllerHelper.handleDelete(req, res, this.myAccessControl, accessControlResource);
         }
 
         let route = SequelizeRouteHelper.getInstanceRoute(model); // get the GET route
@@ -147,10 +154,11 @@ export default class SequelizeController {
      */
     configureUpdate(model){
         let tableName = SequelizeHelper.getTableName(model);
+        let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
 
         let functionForModel = function(req, res){ //define the get function
             //just call the default UPDATE
-            this.myExpressRouter.defaultControllerHelper.handleUpdate(req, res, this.myAccessControl, tableName);
+            this.myExpressRouter.defaultControllerHelper.handleUpdate(req, res, this.myAccessControl, accessControlResource);
         }
 
         let route = SequelizeRouteHelper.getInstanceRoute(model); // get the GET route
@@ -196,6 +204,7 @@ export default class SequelizeController {
      */
     static paramPrimaryParamChecker(primaryKeyAttribute, reqLocalsKey = null, model, req, res, next, primaryKeyAttributeValue) {
         let tableName = SequelizeHelper.getTableName(model);
+        let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
         if(!reqLocalsKey){
             reqLocalsKey = tableName
         }
@@ -219,8 +228,8 @@ export default class SequelizeController {
                 return;
             } else { // resource was found
                 if(resources.length===1){ //exactly one was found
-                    req.locals[reqLocalsKey] = resources[0]; //save the found resource
-                    await DefaultControllerHelper.setOwningState(req,reqLocalsKey);
+                    req.locals[accessControlResource] = resources[0]; //save the found resource
+                    await DefaultControllerHelper.setOwningState(req,accessControlResource);
                 }
                 next();
             }

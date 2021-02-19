@@ -122,7 +122,6 @@ export default class MyAuthMiddlewares {
         req.locals.currentUser = {}; //create a current user, which will be the user who initiates the request
         req.locals.currentUser.role = MyAccessControl.roleNameGuest; //define it as anonymous
 
-
         if(!!this.authConfig.disabled){
             req.locals.currentUser.role = MyAccessControl.roleNameAdmin; //better make him then admin
             next();

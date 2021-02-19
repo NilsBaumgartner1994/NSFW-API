@@ -24,5 +24,5 @@ const config = {
 var currentPath = process.cwd();
 let pathToModels = currentPath+"/dev"; //path to models
 
-let server = new ServerAPI(config["server"], null, null, 1);
+let server = new ServerAPI(config["server"], null, pathToModels, 1);
 server.start();
