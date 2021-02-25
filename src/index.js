@@ -9,4 +9,5 @@ module.exports = {
     DefaultControllerHelper: require('./helper/DefaultControllerHelper').default, // eslint-disable-line global-require
     StringHelper: require('./helper/StringHelper').default, // eslint-disable-line global-require
     NumberHelper: require('./helper/NumberHelper').default, // eslint-disable-line global-require
+    FileSystemHelper: require('./helper/FileSystemHelper').default, // eslint-disable-line global-require
 };
