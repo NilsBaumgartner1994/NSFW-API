@@ -11,6 +11,7 @@ import MyAuthMiddlewares from "../auth/MyAuthMiddlewares";
 import CustomControllers from "../controllers/CustomControllers";
 import ServerController from "../controllers/ServerController";
 import ServerAPI from "../ServerAPI";
+import FileSystemHelper from "../helper/FileSystemHelper";
 
 const { promisify } = require("util");
 
@@ -71,12 +72,11 @@ export default class MyExpressRouter {
     static custom_routeResources = MyExpressRouter.urlAPI + MyExpressRouter.custom_routeIdentifier;
 
     //Define a ControlResource for general purpose for admins
-    static adminRoutes_accessControlResource = "AdminFunctions";
+    static adminRoutes_accessControlResource = "FUNCTIONS_Admin";
 
     static custom_routeMetrics = MyExpressRouter.custom_routeResources + "/metrics";
     static custom_bugReport = MyExpressRouter.custom_routeResources + "/bugReport";
     static custom_showAllEndpoints = MyExpressRouter.custom_routeResources + "/showAllEndpoints";
-    static custom_routeSystemInformation = MyExpressRouter.custom_routeResources + "/systemInformation";
     static custom_routeSendPushNotification = MyExpressRouter.custom_routeResources + "/sendNotification";
 
     /**
@@ -150,6 +150,12 @@ export default class MyExpressRouter {
         MyExpressRouter.responseWithJSON(res, HttpStatus.OK, envelope);
     }
 
+    static responseWithFiledownload(res, pathToFile, customFilename=null){
+        let filenameWithExtension = FileSystemHelper.getFilenameWithExtensionFromPath(pathToFile);
+        let downloadName = customFilename || filenameWithExtension;
+        res.download(pathToFile, downloadName);
+    }
+
     /**
      * Response with JSON to a request
      * @param res The response object
@@ -163,6 +169,52 @@ export default class MyExpressRouter {
             error: error
         }
         MyExpressRouter.responseWithJSON(res, errStatus, envelope);
+    }
+
+    /**
+     * Response with JSON to a request
+     * @param res The response object
+     * @param errorDetails
+     */
+    static responseWithBadRequestErrorJSON(res, errorDetails) {
+        if(!errorDetails){
+            errorDetails = {};
+        }
+        let errObj = { //response with error
+            error: 'Bad Request',
+        }
+        let err = Object.assign(errObj, errorDetails);
+
+        MyExpressRouter.responseWithErrorJSON(res, HttpStatus.BAD_REQUEST, err);
+    }
+
+    /**
+     * Response with JSON to a request
+     * @param res The response object
+     * @param errorDetails
+     */
+    static responseWithNotFoundErrorJSON(res, errorDetails=null) {
+        if(!errorDetails){
+            errorDetails = {};
+        }
+        let errObj = { //response with error
+            error: 'Not found',
+        }
+        let err = Object.assign(errObj, errorDetails);
+
+        MyExpressRouter.responseWithErrorJSON(res, HttpStatus.NOT_FOUND, err);
+    }
+
+    /**
+     * Response a Request with the default Message for a deletion of a resource
+     * @param res The response object
+     * @param err
+     */
+    static respondWithInternalErrorMessage(res, err) {
+        MyExpressRouter.responseWithErrorJSON(res, HttpStatus.INTERNAL_SERVER_ERROR, {
+            errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
+            error: err.toString()
+        });
     }
 
     /**
@@ -183,36 +235,24 @@ export default class MyExpressRouter {
     }
 
     /**
-     * Response to a file Upload
-     * @param res the response object
-     * @param status the status
-     */
-    static responseToFileUpload(res, status) {
-        res.status(status);
-        res.header('Access-Control-Allow-Origin', '*');
-        res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
-        res.end();
-    }
-
-    /**
-     * A Parameter Checker for Dates
+     * A Parameter Checker for Dates after ISO 8601 YYYY-MM-DD
      * @param req the request object
      * @param res the response object
      * @param next the next function
      * @param date the date to be checked
      * @returns boolean next function on success, else response with error and false
+     * https://en.wikipedia.org/wiki/ISO_8601#:~:text=ISO%208601%20prescribes%2C%20as%20a,BC%20and%20all%20others%20AD.
      */
     static paramcheckerDay(req, res, next, date) {
-        let matches = /^(\d{1,2})[-](\d{1,2})[-](\d{4})$/.exec(date); //does date matches the regex DD-DD-DDDD ?
+        let matches = /^(\d{4})[-](\d{1,2})[-](\d{1,2})$/.exec(date); //does date matches the regex DD-DD-DDDD ?
         if (matches == null) return false;
-        let d = matches[1]; //get day
+        let d = matches[3]; //get day
         let m = matches[2]; //get month
-        let y = matches[3]; //get year
+        let y = matches[1]; //get year
 
         let validDate = DateHelper.validateAndFormatDate(d, m, y); //is this a valid date ?
         if (!validDate) { //if not valid date
-            MyExpressRouter.responseWithErrorJSON(res, HttpStatus.BAD_REQUEST, {message:'date has wrong format', date: date});
+            MyExpressRouter.responseWithBadRequestErrorJSON(res, {message:'date has wrong format', date: date})
         } else { //if valid date
             req.locals.date = validDate;
             next();
@@ -256,11 +296,6 @@ export default class MyExpressRouter {
         this.expressApp.get("/loaderio-4fffcfb2d8504b146819ec8df3a58421/", this.handleVerification.bind(this));
 
         this.expressApp.get(MyExpressRouter.routeVersion, this.handleVersionRequest.bind(this));
-        this.expressApp.get(MyExpressRouter.routeTime, this.handleTimeRequest.bind(this));
-
-
-
-        this.expressApp.get(MyExpressRouter.custom_routeSystemInformation, this.handleSystemInformationGetRequest.bind(this));
         //this.expressApp.get(MyExpressRouter.custom_routeMetrics, this.handleMetricsRequest.bind(this));
     }
 
@@ -282,10 +317,56 @@ export default class MyExpressRouter {
         this.sequelizeController = new SequelizeController(logger,models,expressApp,myAccessControl,instance);
         this.sequelizeSchemeController = new SequelizeSchemeController(logger,models,expressApp,myAccessControl,instance);
 
-        this.serverController = new ServerController(logger,models,expressApp,myAccessControl,instance, MyExpressRouter.routeServer);
-
+        this.serverController = new ServerController(logger, models, expressApp, myAccessControl, instance, MyExpressRouter.routeServer);
         this.customController = new CustomControllers(logger, models, expressApp, myAccessControl, instance, MyExpressRouter.routeCustom); //create controller for custom endpoints
 
+    }
+
+    withPermissionMiddleware(route, crudOperation, accessControlResource, next, isOwnCallback=false){
+        let expressOperation = null;
+        switch (crudOperation){
+            case DefaultControllerHelper.CRUD_READ: expressOperation = "get"; break;
+            case DefaultControllerHelper.CRUD_CREATE: expressOperation = "post"; break;
+            case DefaultControllerHelper.CRUD_UPDATE: expressOperation = "put"; break;
+            case DefaultControllerHelper.CRUD_DELETE: expressOperation = "delete"; break;
+        }
+        if(!!expressOperation){
+            let functionToHandle = async function(req, res){ //define the get function
+                let isOwn = false;
+                if(typeof isOwnCallback === "function"){
+                    isOwn = await isOwnCallback(req, res);
+                } else {
+                    isOwn = !!isOwnCallback;
+                }
+
+                let permission = DefaultControllerHelper.handleDefaultPermissionCheck(req, res, this.myAccessControl, accessControlResource, crudOperation, isOwn);
+                if (permission.granted) {
+                    next(req, res);
+                }
+            }
+            this.expressApp[expressOperation](route, functionToHandle.bind(this)); // register route in express
+        }
+    }
+
+    static getSingleFileUpload(req, res){
+        if (!req.files) { // if no files given
+            MyExpressRouter.responseWithBadRequestErrorJSON(res, {error: "No files given"})
+            return false;
+        }
+        if (req.files.length !== 1) { // more than one file
+            MyExpressRouter.responseWithBadRequestErrorJSON(res, {error: "Only one file allowed"})
+            return false;
+        }
+        let file = req.files.file;
+        if (file === undefined) { //whoo you named it other ? im sorry
+            MyExpressRouter.responseWithBadRequestErrorJSON(res, { error: "Input Field name has to be: file!" });
+            return false;
+        }
+        return file;
+    }
+
+    static getFileUploadName(file){
+        return file.originalFilename || file.name || file.filename;
     }
 
     /**
@@ -399,64 +480,5 @@ export default class MyExpressRouter {
         let answer = {version: version};
         MyExpressRouter.responseWithSuccessJSON(res, answer);
 
-    }
-
-
-    /**
-     * Get the starttime and current time of the current worker instance
-     * @param req the request object
-     * @param res the response object
-     *
-     * @api {get} /api/time Get the API version
-     * @apiDescription Get the current time of the worker thread and the start time of the worker
-     * @apiName GetAPIVersion
-     * @apiPermission Anonym
-     * @apiGroup 4Custom
-     *
-     * @apiSuccess {String} version The actual version of the Server API.
-     *
-     * @apiExample Example usage:
-     * curl -i http://localhost/api/time
-     */
-    handleTimeRequest(req, res) {
-        let startTime = this.startTime
-        let answer = {startTime: startTime, currentTime: new Date(), workerId: ServerAPI.getWorkderId()};
-        MyExpressRouter.responseWithSuccessJSON(res, answer);
-    }
-
-    /**
-     * Handle System Information Request, which provide all machine based informations
-     * @param req the request object
-     * @param res the response object
-     *
-     * @api {get} /api/custom/systemInformation Get All System Informations
-     * @apiDescription Handle System Information Request, which provide all machine based informations
-     * @apiName GetAllSystemInformations
-     * @apiPermission Admin
-     * @apiUse MyAuthorization
-     * @apiGroup Custom
-     *
-     * @apiSuccess {List[Routes]} Routes All possible routes
-     * @apiError (Error) {String} error The possible error that can occur. Possible Errors: FORBIDDEN
-     *
-     * @apiExample Example usage:
-     * curl -i http://localhost/api/custom/systemInformation
-     */
-    handleSystemInformationGetRequest(req, res) {
-        this.logger.info("System Information Request");
-
-        let permission = this.myAccessControl
-        .can(req.locals.currentUser.role)
-        .readAny(MyExpressRouter.adminRoutes_accessControlResource);
-
-        if (permission.granted) { //can read system informations
-            let answer = SystemInformationSchedule.allInformations;
-            MyExpressRouter.responseWithSuccessJSON(res, answer);
-        } else {
-            MyExpressRouter.responseWithErrorJSON(res, HttpStatus.FORBIDDEN, {
-                errorCode: HttpStatus.FORBIDDEN,
-                error: 'Forbidden to get System Informations'
-            });
-        }
     }
 }

@@ -190,7 +190,7 @@ export default class SequelizeAssociationController {
                     resource["remove"+singularName](associatedResource).then(success => {
                         DefaultControllerHelper.respondWithDeleteMessage(req, res);
                     }).catch(err => {
-                        DefaultControllerHelper.respondWithInternalErrorMessage(req,res,err);
+                        DefaultControllerHelper.respondWithInternalErrorMessage(res,err);
                     });
                 } else {
                     MyExpressRouter.responseWithErrorJSON(res, HttpStatus.NOT_FOUND, { //response with error
@@ -229,7 +229,7 @@ export default class SequelizeAssociationController {
                     resource["add"+singularName](associatedResource).then(success => {
                         DefaultControllerHelper.respondWithSuccessMessage(req, res); //TODO better response ? Maybe handleGet ?
                     }).catch(err => {
-                        DefaultControllerHelper.respondWithInternalErrorMessage(req,res,err);
+                        DefaultControllerHelper.respondWithInternalErrorMessage(res,err);
                     });
                 }
             } else {

@@ -175,7 +175,6 @@ export default class SequelizeController {
         for(let i=0; i<primaryKeyAttributes.length; i++){ //for every primary key
             let primaryKeyAttribute = primaryKeyAttributes[i];
             SequelizeController.configurePrimaryParamChecker(expressApp, model,primaryKeyAttribute, reqLocalsKey); //configure param checker
-            //console.log("configurePrimaryParamsChecker: reqLocalsKey: "+reqLocalsKey);
         }
     }
 
@@ -189,6 +188,8 @@ export default class SequelizeController {
         // get the identifier
         let modelPrimaryKeyAttributeParameter = SequelizeRouteHelper.getModelPrimaryKeyAttributeParameter(model,primaryKeyAttribute,reqLocalsKey);
         // link identifier to paramchecker
+        console.log("configurePrimaryParamChecker");
+        console.log(primaryKeyAttribute);
         expressApp.param(modelPrimaryKeyAttributeParameter, SequelizeController.paramPrimaryParamChecker.bind(this,primaryKeyAttribute,reqLocalsKey,model));
     }
 
@@ -219,19 +220,19 @@ export default class SequelizeController {
         //we search for all, since there are maybe multiple primary keys
         model.findAll({where: modelSearchJSON}).then(async resources => {
             if(!resources || resources.length === 0){ //if no resources found
-                MyExpressRouter.responseWithErrorJSON(res, HttpStatus.NOT_FOUND, { //response with error
+                MyExpressRouter.responseWithNotFoundErrorJSON(res, { //response with error
                     error: 'No Resource found',
                     model: tableName,
                     key: primaryKeyAttribute,
                     value: primaryKeyAttributeValue
-                });
+                })
                 return;
             } else { // resource was found
                 if(resources.length===1){ //exactly one was found
                     req.locals[accessControlResource] = resources[0]; //save the found resource
                     await DefaultControllerHelper.setOwningState(req,accessControlResource);
                 }
-                next();
+                next(); // maybe we havent processed all params yet, keep going
             }
         }).catch(err => { //handle error
             //console.log("[SequelizeController] paramPrimaryParamChecker - " + err.toString());

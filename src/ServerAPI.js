@@ -9,6 +9,7 @@ import MyExpressRouter from "./module/MyExpressRouter"; //Routing Module
 import MyLogger from "./module/MyLogger"; //Logger Module
 import FancyTerminal from "./helper/FancyTerminal";
 import SequelizeModelLoader from "./helper/SequelizeModelLoader";
+import DatabaseBackupModule from "./module/DatabaseBackupModule";
 
 /**
  * ServerAPI Starts here
@@ -52,8 +53,10 @@ var myServerAPILogger,
     mySystemLogger,
     systemLogger,
     expressApp,
+    databaseBackupModule,
     myAccessControl,
     myExpressRouter,
+    sequelizeConfig,
     scheduleModule,
     redisClient;
 
@@ -73,12 +76,13 @@ export default class ServerAPI {
     static MESSAGE_TYPE_COMMAND = "Command";
     static COMMAND_RESTART = "Restart";
 
+    static instance = null;
+
     constructor(serverConfig, sequelizeConfig, pathToModels, numCPUs) {
+        ServerAPI.instance = this;
         this.serverConfig = serverConfig;
         this.sequelizeConfig = sequelizeConfig;
         this.pathToModels = pathToModels;
-        //this.sequelizeConfig = sequelizeConfig;
-        //this.pathToModels = pathToModels;
         this.numCPUs = isNaN(numCPUs) ? os.cpus().length : numCPUs;
     }
 
@@ -87,6 +91,7 @@ export default class ServerAPI {
         models = this.models;
         numCPUs = this.numCPUs;
         serverConfig = this.serverConfig;
+        sequelizeConfig = this.sequelizeConfig;
         redisPort = this.serverConfig.redisPort;
         await startServer();
     }
@@ -423,6 +428,7 @@ async function createWorkerModules() {
         redisClient,
         serverConfig
     );
+    databaseBackupModule = new DatabaseBackupModule(serverAPILogger, models, sequelizeConfig)
     await myExpressRouter.configureController(); //configure the routes
 }
 

@@ -30,13 +30,24 @@ export default class SequelizeSchemeController {
     }
 
     configureModelSchemesIndex(){
+        console.log("configureModelSchemesIndex");
         const grants = this.myAccessControl.getGrants();
         const tableNames = SequelizeHelper.getModelTableNames(this.models);
         const allModelRoutes = SequelizeRouteHelper.getAllModelRoutes(this.models);
 
         let functionForModel = function(req, res){
             let modelsWithPermission = Object.keys(grants[req.locals.currentUser.role]); //all permission groups
-            let intersection = tableNames.filter(x => modelsWithPermission.includes(x)); //where it also is a table
+            console.log("modelsWithPermission");
+            console.log(modelsWithPermission);
+
+            let intersection = [];
+            for(let i=0; i<tableNames.length; i++){
+                let tableName = tableNames[i];
+                let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
+                if(modelsWithPermission.includes(accessControlResource)){
+                    intersection.push(tableName);
+                }
+            }
             let allowedModelRoutes = {};
             for(let i=0; i<intersection.length;i++){
                 let tableName = intersection[i];
@@ -52,11 +63,12 @@ export default class SequelizeSchemeController {
     configureModelSchemeRoute(model){
         let route = SequelizeRouteHelper.getSchemeRoute(model);
         let tableName = SequelizeHelper.getTableName(model);
+        let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
 
         let functionForModel = function(req, res){
             let rawAttributes = SequelizeHelper.getModelAttributes(model);
 
-            let permission = DefaultControllerHelper.getPermission(req,this.myAccessControl,tableName,"read",false);
+            let permission = DefaultControllerHelper.getPermission(req,this.myAccessControl,accessControlResource,DefaultControllerHelper.CRUD_READ,false);
             if (permission.granted) {
                 let fileteredDataJSON = permission.filter(rawAttributes);
                 MyExpressRouter.responseWithSuccessJSON(res, fileteredDataJSON);

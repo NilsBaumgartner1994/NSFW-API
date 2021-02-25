@@ -126,7 +126,6 @@ export default class SequelizeRouteHelper {
     static getModelPrimaryKeyAttributeRoute(model,reqLocalsKey=null){
         let route = "";
 
-
         let primaryKeyAttributes = SequelizeHelper.getPrimaryKeyAttributes(model); // lets get all primary keys
         for(let i=0; i<primaryKeyAttributes.length; i++){ //for every primary key
             let primaryKeyAttribute = primaryKeyAttributes[i];

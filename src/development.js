@@ -1,5 +1,6 @@
 import "regenerator-runtime/runtime.js";
 import ServerAPI from "./ServerAPI";
+import AuthConnector from "./auth/AuthConnector";
 
 const config = {
     "server": {

@@ -1,11 +1,12 @@
 import MyExpressRouter from "../module/MyExpressRouter";
 import ServerAPI from "../ServerAPI";
 import DefaultControllerHelper from "../helper/DefaultControllerHelper";
+import SystemInformationSchedule from "../schedules/SystemInformationSchedule";
+import BackupController from "./BackupController";
 
 export default class ServerController {
 
     static AccessControl = "SERVER"
-    static AccessControl_Restart = ServerController.AccessControl+"_"+"Restart";
 
     constructor(logger, models, expressApp, myAccessControl, myExpressRouter, route) {
         this.logger = logger;
@@ -23,18 +24,19 @@ export default class ServerController {
     configureRoutes() {
         this.configureRestart();
         //this.configureCrash();
-    }
+        this.configureGetTime();
+        this.configureGetSystemInformations();
 
-    handleFinishRestart(res){
-        return () => {return "Hallo"};
+        this.backupController = new BackupController(this.logger, this.models, this.expressApp, this.myAccessControl, this.myExpressRouter, this.route+"/backups")
     }
 
     configureRestart(){
+        let instance = this;
         let functionToHandle = async function(req, res){ //define the get function
-            let accessControlResource = ServerController.AccessControl_Restart;
-            let permission = DefaultControllerHelper.handleDefaultPermissionCheck(res, res, this.myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_CREATE, false);
+            let accessControlResource = MyExpressRouter.adminRoutes_accessControlResource;
+            let permission = DefaultControllerHelper.handleDefaultPermissionCheck(req, res, this.myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_CREATE, false);
             if (permission.granted) {
-                MyExpressRouter.responseWithSuccessJSON(res, {"currentTime": new Date()});
+                instance.handleTimeRequest(req,res);
                 await ServerAPI.restartWorkers();
             }
         }
@@ -50,6 +52,31 @@ export default class ServerController {
         }
         let route = this.route + "/crash";
         this.expressApp.get(route, functionToHandle.bind(this)); // register route in express
+    }
+
+    configureGetTime(){
+        let route = this.route + "/time";
+        this.expressApp.get(route, this.handleTimeRequest.bind(this));
+    }
+
+    handleTimeRequest(req, res) {
+        let startTime = this.myExpressRouter.startTime;
+        let answer = {startTime: startTime, currentTime: new Date(), workerId: ServerAPI.getWorkderId()};
+        MyExpressRouter.responseWithSuccessJSON(res, answer);
+    }
+
+    configureGetSystemInformations(){
+        let route = this.route + "/systemInformation";
+        this.expressApp.get(route, this.handleSystemInformationGetRequest.bind(this));
+    }
+
+    handleSystemInformationGetRequest(req, res) {
+        let accessControlResource = MyExpressRouter.adminRoutes_accessControlResource;
+        let permission = DefaultControllerHelper.handleDefaultPermissionCheck(req, res, this.myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_READ, false);
+        if (permission.granted) { //can read system informations
+            let answer = SystemInformationSchedule.allInformations;
+            MyExpressRouter.responseWithSuccessJSON(res, answer);
+        }
     }
 
 

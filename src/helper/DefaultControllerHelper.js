@@ -168,7 +168,7 @@ export default class DefaultControllerHelper {
      * @param req The request object
      * @param res The response object
      */
-    static respondWithInternalErrorMessage(req, res, err) {
+    static respondWithInternalErrorMessage(res, err) {
         MyExpressRouter.responseWithErrorJSON(res, HttpStatus.INTERNAL_SERVER_ERROR, {
             errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
             error: err.toString()
@@ -324,7 +324,7 @@ export default class DefaultControllerHelper {
                 MyExpressRouter.responseWithSuccessJSON(res, dataJSON); //anyway answer normaly
             }).catch(err => {
                 this.logger.error("[DefaultControllerHelper] handleAssociationIndex - " + resourceName + " - " + err.toString());
-                DefaultControllerHelper.respondWithInternalErrorMessage(req,res,err);
+                DefaultControllerHelper.respondWithInternalErrorMessage(res,err);
 
             });
         } else {
@@ -338,7 +338,7 @@ export default class DefaultControllerHelper {
             let dataJSON = {count:amount};
             MyExpressRouter.responseWithSuccessJSON(res, dataJSON); //anyway answer normaly
         }).catch(err => {
-            DefaultControllerHelper.respondWithInternalErrorMessage(req,res,err);
+            DefaultControllerHelper.respondWithInternalErrorMessage(res,err);
         });
     }
     /**
@@ -358,7 +358,7 @@ export default class DefaultControllerHelper {
      * @apiError (Error) {String} error A description of the error
      */
     async handleIndex(req, res, sequelizeModel, myAccessControl, accessControlResource, includeModels = [], redisKey=null, customPermission=null) {
-        let permission = DefaultControllerHelper.handleDefaultPermissionCheck(res, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_READ, false);
+        let permission = DefaultControllerHelper.handleDefaultPermissionCheck(req, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_READ, false);
         if(!!customPermission){
             permission = customPermission;
         }
@@ -382,7 +382,7 @@ export default class DefaultControllerHelper {
                             MyExpressRouter.responseWithSuccessJSON(res, dataJSON); //anyway answer normaly
                         }).catch(err => {
                             this.logger.error("[DefaultControllerHelper] handleIndex - " + accessControlResource + " found in cache for role: " + role + " - " + err.toString());
-                            DefaultControllerHelper.respondWithInternalErrorMessage(req,res,err);
+                            DefaultControllerHelper.respondWithInternalErrorMessage(res,err);
                         });
                     }
                 });
@@ -397,7 +397,7 @@ export default class DefaultControllerHelper {
                     DefaultControllerHelper.respondWithPermissionFilteredResources(req, res, resources, permission);
                 }).catch(err => {
                     this.logger.error("[DefaultControllerHelper] handleIndex - " + accessControlResource + " with query: " + JSON.stringify(req.query) + " - " + err.toString());
-                    DefaultControllerHelper.respondWithInternalErrorMessage(req,res,err);
+                    DefaultControllerHelper.respondWithInternalErrorMessage(res,err);
                 });
             }
         }
@@ -422,7 +422,7 @@ export default class DefaultControllerHelper {
         console.log("DefaultHandler handleCreate");
         let isOwn = DefaultControllerHelper.getOwningState(req,accessControlResource);
         console.log("is own: "+isOwn);
-        let permission = DefaultControllerHelper.handleDefaultPermissionCheck(res, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_CREATE, isOwn);
+        let permission = DefaultControllerHelper.handleDefaultPermissionCheck(req, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_CREATE, isOwn);
 
         this.logger.info("[DefaultControllerHelper] handleCreate - " + accessControlResource + " currentUser: " + req.locals.currentUser.id + " granted: " + permission.granted);
         if (permission.granted) { //check if allowed to create the resource
@@ -439,7 +439,7 @@ export default class DefaultControllerHelper {
             }).catch(err => {
                 console.log(err);
                 this.logger.error("[DefaultControllerHelper] handleCreate - " + err.toString());
-                DefaultControllerHelper.respondWithInternalErrorMessage(req,res,err);
+                DefaultControllerHelper.respondWithInternalErrorMessage(res,err);
                 return null;
             });
         }
@@ -481,23 +481,29 @@ export default class DefaultControllerHelper {
      * @apiError (Error) {String} error A description of the error
      */
     async handleGet(req, res, myAccessControl, accessControlResource) {
+        let sequelizeResource = DefaultControllerHelper._getSequelizeResourceAndHandleNotFound(req, res, accessControlResource);
+        if(sequelizeResource){
+            let isOwn = DefaultControllerHelper.getOwningState(req,accessControlResource);
+
+            let permission = DefaultControllerHelper.handleDefaultPermissionCheck(req, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_UPDATE, isOwn);
+            if(permission.granted){
+                await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_READ,true);
+                DefaultControllerHelper.respondWithPermissionFilteredResource(req, res, sequelizeResource, permission);
+                await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_READ,false);
+            }
+        }
+    }
+
+    static _getSequelizeResourceAndHandleNotFound(req, res, accessControlResource){
         let sequelizeResource = req.locals[accessControlResource]; //get the found resource, found by paramcheckers
         if(!sequelizeResource){
-            MyExpressRouter.responseWithErrorJSON(res, HttpStatus.NOT_FOUND, {
+            MyExpressRouter.responseWithNotFoundErrorJSON(res, {
                 error: 'No Resource found',
                 model: accessControlResource
             });
-            return;
+            return false;
         }
-
-        let isOwn = DefaultControllerHelper.getOwningState(req,accessControlResource);
-
-        let permission = DefaultControllerHelper.handleDefaultPermissionCheck(res, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_UPDATE, isOwn);
-        if(permission.granted){
-            await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_READ,true);
-            DefaultControllerHelper.respondWithPermissionFilteredResource(req, res, sequelizeResource, permission);
-            await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_READ,false);
-        }
+        return sequelizeResource;
     }
 
     static getFilteredReqBodyByPermission(req,myAccessControl,accessControlResource,crudOperation, isOwn){
@@ -522,25 +528,26 @@ export default class DefaultControllerHelper {
      * @apiError (Error) {String} error A description of the error
      */
     async handleUpdate(req, res, myAccessControl, accessControlResource, updateTableUpdateTimes = false) {
-        let sequelizeResource = req.locals[accessControlResource]; //get the resource
+        let sequelizeResource = DefaultControllerHelper._getSequelizeResourceAndHandleNotFound(req, res, accessControlResource);
+        if(sequelizeResource){
+            let isOwn = DefaultControllerHelper.getOwningState(req,accessControlResource);
 
-        let isOwn = DefaultControllerHelper.getOwningState(req,accessControlResource);
-
-        let permission = DefaultControllerHelper.handleDefaultPermissionCheck(res, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_UPDATE, isOwn);
-        if(permission.granted){
-            this.logger.info("[DefaultControllerHelper] handleUpdate - " + accessControlResource + " currentUser:" + req.locals.currentUser.id + " body: " + JSON.stringify(req.body));
-            let allowedAttributesToUpdate = DefaultControllerHelper.getFilteredReqBodyByPermission(req,myAccessControl,accessControlResource,DefaultControllerHelper.CRUD_UPDATE, isOwn)
-            this.logger.info("[DefaultControllerHelper] handleUpdate - " + accessControlResource + " currentUser:" + req.locals.currentUser.id + " allowedAttributesToUpdate: " + JSON.stringify(allowedAttributesToUpdate));
-            await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_UPDATE,true);
-            sequelizeResource.update(allowedAttributesToUpdate).then(async (updatedResource) => { //update resource
-                await DefaultControllerHelper.executeHookFunctions(updatedResource,accessControlResource,DefaultControllerHelper.CRUD_UPDATE,false);
-                req.locals[accessControlResource] = updatedResource;
-                this.handleGet(req, res, myAccessControl, accessControlResource);
-                this.updateTableUpdateTimes(sequelizeResource.constructor, updateTableUpdateTimes);
-            }).catch(err => {
-                this.logger.error("[DefaultControllerHelper] handleUpdate - " + err.toString());
-                DefaultControllerHelper.respondWithInternalErrorMessage(req,res,err);
-            });
+            let permission = DefaultControllerHelper.handleDefaultPermissionCheck(req, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_UPDATE, isOwn);
+            if(permission.granted){
+                this.logger.info("[DefaultControllerHelper] handleUpdate - " + accessControlResource + " currentUser:" + req.locals.currentUser.id + " body: " + JSON.stringify(req.body));
+                let allowedAttributesToUpdate = DefaultControllerHelper.getFilteredReqBodyByPermission(req,myAccessControl,accessControlResource,DefaultControllerHelper.CRUD_UPDATE, isOwn)
+                this.logger.info("[DefaultControllerHelper] handleUpdate - " + accessControlResource + " currentUser:" + req.locals.currentUser.id + " allowedAttributesToUpdate: " + JSON.stringify(allowedAttributesToUpdate));
+                await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_UPDATE,true);
+                sequelizeResource.update(allowedAttributesToUpdate).then(async (updatedResource) => { //update resource
+                    await DefaultControllerHelper.executeHookFunctions(updatedResource,accessControlResource,DefaultControllerHelper.CRUD_UPDATE,false);
+                    req.locals[accessControlResource] = updatedResource;
+                    this.handleGet(req, res, myAccessControl, accessControlResource);
+                    this.updateTableUpdateTimes(sequelizeResource.constructor, updateTableUpdateTimes);
+                }).catch(err => {
+                    this.logger.error("[DefaultControllerHelper] handleUpdate - " + err.toString());
+                    DefaultControllerHelper.respondWithInternalErrorMessage(res,err);
+                });
+            }
         }
     }
 
@@ -560,24 +567,23 @@ export default class DefaultControllerHelper {
      * @apiError (Error) {String} error A description of the error
      */
     async handleDelete(req, res, myAccessControl, accessControlResource, updateTableUpdateTimes = false) {
-	    //console.log("Helper handleDelete");
-        let sequelizeResource = req.locals[accessControlResource]; //get the resource which should be deleted
-    	//console.log("Found Resource: "+!!sequelizeResource);
-
-        let isOwn = DefaultControllerHelper.getOwningState(req,accessControlResource);
-        let permission = DefaultControllerHelper.handleDefaultPermissionCheck(res, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_DELETE, isOwn);
-        if(permission.granted){
-            this.logger.info("[DefaultControllerHelper] handleDelete - " + accessControlResource + " currentUser: " + req.locals.currentUser.id + " granted: " + permission.granted);
-            let constructor = sequelizeResource.constructor; //get constructor for table update times
-            await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_DELETE,true);
-            sequelizeResource.destroy().then(async (amountDeletedResources) => { //ignoring the amount of deletions
-                await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_DELETE,false);
-                DefaultControllerHelper.respondWithDeleteMessage(req, res);
-                this.updateTableUpdateTimes(constructor, updateTableUpdateTimes);
-            }).catch(err => {
-                this.logger.error("[DefaultControllerHelper] handleDelete - " + accessControlResource + " " + err.toString());
-                DefaultControllerHelper.respondWithInternalErrorMessage(req,res,err);
-            });
+        let sequelizeResource = DefaultControllerHelper._getSequelizeResourceAndHandleNotFound(req, res, accessControlResource);
+        if(sequelizeResource){
+            let isOwn = DefaultControllerHelper.getOwningState(req,accessControlResource);
+            let permission = DefaultControllerHelper.handleDefaultPermissionCheck(req, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_DELETE, isOwn);
+            if(permission.granted){
+                this.logger.info("[DefaultControllerHelper] handleDelete - " + accessControlResource + " currentUser: " + req.locals.currentUser.id + " granted: " + permission.granted);
+                let constructor = sequelizeResource.constructor; //get constructor for table update times
+                await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_DELETE,true);
+                sequelizeResource.destroy().then(async (amountDeletedResources) => { //ignoring the amount of deletions
+                    await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_DELETE,false);
+                    DefaultControllerHelper.respondWithDeleteMessage(req, res);
+                    this.updateTableUpdateTimes(constructor, updateTableUpdateTimes);
+                }).catch(err => {
+                    this.logger.error("[DefaultControllerHelper] handleDelete - " + accessControlResource + " " + err.toString());
+                    DefaultControllerHelper.respondWithInternalErrorMessage(res,err);
+                });
+            }
         }
     }
 

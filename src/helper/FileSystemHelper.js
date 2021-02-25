@@ -24,6 +24,10 @@ export default class FileSystemHelper {
         return fs.move(src,dst);
     }
 
+    static copy(src, dst){
+        return fs.copy(src, dst);
+    }
+
     /**
      * Checks if a path exists
      * @param path The path as String
@@ -49,10 +53,13 @@ export default class FileSystemHelper {
     static deleteFile(filePath) {
         try {
             fs.unlinkSync(filePath);
+            return true;
         } catch (err) {
             if (err.code !== "ENOENT") { //deleting something that does not exist
+                return false;
             }
         }
+        return false;
     }
 
     /**
@@ -153,6 +160,10 @@ export default class FileSystemHelper {
             });
             fs.rmdirSync(path);
         }
+    }
+
+    static getFilenameWithExtensionFromPath(filePath){
+        return filePath.replace(/^.*[\\\/]/, '')
     }
 
     static getFilenameWithoutExtensionFromName(filenameWithExtension){
