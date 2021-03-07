@@ -4,45 +4,39 @@ define({ "api": [
     "url": "Function/Overview",
     "title": "1.2 Function overview",
     "group": "1Overview",
-    "description": "<p>This API can handle a lot of functionalism's. Here comes a short collection of the most important functions.</p>",
+    "description": "<p>This API contains some neat things out of the box, but lets you adapt it for your purposes.</p>",
     "parameter": {
       "fields": {
         "Parameter": [
           {
             "group": "Parameter",
             "optional": false,
-            "field": "Server-Information",
-            "description": "<p>Show vital information of the server, version number</p>"
+            "field": "Models",
+            "description": "<p>Define models and get access to auto generated REST routes with permission system. Use Hooks (pre- and post-creation) for models, to customize the behavior of default controllers.</p>"
           },
           {
             "group": "Parameter",
             "optional": false,
-            "field": "User-Management",
-            "description": "<p>Create, read, update and delete users. Manage friendships and meetings. Notify users via push notifications</p>"
+            "field": "Authentication",
+            "description": "<p>Use default minimalistic authentications or use/create custom authentication modules. With an RBAC (Role-Based-Access-Control) you can check even for attributes.</p>"
           },
           {
             "group": "Parameter",
             "optional": false,
-            "field": "Meal-Management",
-            "description": "<p>Manage, like, comment and rate meals. Up- and download images of meals.</p>"
+            "field": "Backups",
+            "description": "<p>Profit of automatic generated backups (of models) for SqLite. You can create own support for your desired database management tool.</p>"
           },
           {
             "group": "Parameter",
             "optional": false,
-            "field": "Building-Management",
-            "description": "<p>Manage buildings. Up- and download images of buildings</p>"
+            "field": "Schedules",
+            "description": "<p>Register own multi- or single-threaded schedules. We use the standard node-schedule ;-).</p>"
           },
           {
             "group": "Parameter",
             "optional": false,
-            "field": "Washing-Machine-Overview",
-            "description": "<p>View the state of washing machines</p>"
-          },
-          {
-            "group": "Parameter",
-            "optional": false,
-            "field": "Feedback-Management",
-            "description": "<p>Manage Feedback from users</p>"
+            "field": "Custom-Controllers",
+            "description": "<p>Not enough control of the flow ? Create you own custom controllers with easy permission checks.</p>"
           }
         ]
       }
@@ -52,6 +46,30 @@ define({ "api": [
     "groupTitle": "1. Overview",
     "groupDescription": "<p>Welcome to the API Documentation of NSFW-API. There are a lot of informations in here. I recommend you to read at least the small 4 Chapters 1-4 and then you should be good enough prepared to handle this API. This Document can be found in /doc/customDocumentation/1overview.js. ! If you make any changes in the documentation please run the command &quot;npm run doc&quot; to generate this document.</p>",
     "name": "IntroductionFunctionOverview"
+  },
+  {
+    "type": "INTRODUCTION",
+    "url": "Quickstart",
+    "title": "1.3 Quickstart",
+    "group": "1Overview",
+    "description": "<p>If you want to start and test a bit, look at the /src/development.js file ;-)</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "optional": false,
+            "field": "TODO",
+            "description": "<p>Create a small project with multiple examples for every Function overview</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "doc/customDocumentation/1overview.js",
+    "groupTitle": "1. Overview",
+    "groupDescription": "<p>Welcome to the API Documentation of NSFW-API. There are a lot of informations in here. I recommend you to read at least the small 4 Chapters 1-4 and then you should be good enough prepared to handle this API. This Document can be found in /doc/customDocumentation/1overview.js. ! If you make any changes in the documentation please run the command &quot;npm run doc&quot; to generate this document.</p>",
+    "name": "IntroductionQuickstart"
   },
   {
     "type": "INTRODUCTION",
@@ -153,7 +171,7 @@ define({ "api": [
       "examples": [
         {
           "title": "Config List",
-          "content": "import {ServerAPI, AuthConfigList} from \"nsfw-api\";\n\nlet serverConfig = {\n   \"port\": 3001,\n   ...\n   \"auth\": {\n     \"disabled\": false,\n     \"methods\": {\n       \"configList\": true,\n     }\n   }\n }\n\nAuthConfigList.setAdminsFile({\n    admin: \"ThisIsTheDefaultPassword\",\n    alsoAdminUserName: \"AnOtherPassword\",\n});\n\n//for configOfModels and pathToModels see later documentation\nlet server = new ServerAPI(serverConfig, configOfModels, pathToModels, \"auto\");\nserver.start();",
+          "content": "import {ServerAPI, AuthConfigList} from \"nsfw-api\";\n\nlet serverConfig = {\n   \"port\": 3001,\n   ...\n   \"auth\": {\n     \"disabled\": false,\n     \"methods\": {\n       \"configList\": true,\n     }\n   }\n }\n\nAuthConfigList.setAdminsFile({\n    admin: \"SuperSecretPassword\",\n    alsoAdminUserName: \"AnotherPassword\",\n});\n\n//for configOfModels and pathToModels see later documentation\nlet server = new ServerAPI(serverConfig, configOfModels, pathToModels, \"auto\");\nserver.start();",
           "type": "js"
         },
         {
