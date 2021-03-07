@@ -38,6 +38,7 @@ export default class MyExpressRouter {
     static routeSchemes = MyExpressRouter.urlAPI+"/schemes";
     static routeAuth = MyExpressRouter.urlAPI + "/auth"; //Route to authenticate
     static routeServer = MyExpressRouter.urlAPI+"/server"; //Routes to Server Functions like Restart
+    static routePlugins = MyExpressRouter.urlAPI+"/plugins"; //Routes to plugins API Endpoints
     static routeCustom = MyExpressRouter.urlAPI+"/custom"; //Routes to custom API Endpoints
 
     /**
@@ -114,6 +115,10 @@ export default class MyExpressRouter {
         this.configurePublicRoutes();
 
         this.logger.info("[MyExpressRouter] initialised");
+    }
+
+    static getPluginRoute(pluginName){
+        return MyExpressRouter.routePlugins + "/"+pluginName;
     }
 
     static async saveInRedis(key, value){
@@ -319,7 +324,6 @@ export default class MyExpressRouter {
 
         this.serverController = new ServerController(logger, models, expressApp, myAccessControl, instance, MyExpressRouter.routeServer);
         this.customController = new CustomControllers(logger, models, expressApp, myAccessControl, instance, MyExpressRouter.routeCustom); //create controller for custom endpoints
-
     }
 
     withPermissionMiddleware(route, crudOperation, accessControlResource, next, isOwnCallback=false){

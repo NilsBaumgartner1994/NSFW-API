@@ -1,21 +1,18 @@
-import MyExpressRouter from "../module/MyExpressRouter";
-import ServerAPI from "../ServerAPI";
-import DefaultControllerHelper from "../helper/DefaultControllerHelper";
-import DatabaseBackupModule from "../module/DatabaseBackupModule";
-import FileSystemHelper from "../helper/FileSystemHelper";
+import MyExpressRouter from "../../module/MyExpressRouter";
+import DefaultControllerHelper from "../../helper/DefaultControllerHelper";
 
 export default class BackupController {
 
-    static _keyBackupFileName = "BackupController_backupFileName";
+    static _keyBackupFileName = "PluginBackup_backupFileName";
 
-    constructor(logger, models, expressApp, myAccessControl, myExpressRouter, route) {
+    constructor(logger, models, myExpressRouter, route, backupModule) {
         this.logger = logger;
         this.models = models;
-        this.expressApp = expressApp;
-        this.myAccessControl = myAccessControl;
+        this.expressApp = myExpressRouter.expressApp;
+        this.myAccessControl = myExpressRouter.myAccessControl;
         this.myExpressRouter = myExpressRouter;
         this.route = route;
-        this.backupModule = new DatabaseBackupModule(logger, models, ServerAPI.instance.sequelizeConfig);
+        this.backupModule = backupModule;
         this.configureRoutes();
     }
 
@@ -25,6 +22,7 @@ export default class BackupController {
     configureRoutes() {
         this.configureIndexBackups();
         this.configureBackupParamChecker();
+        this.configureCreateBackup();
         this.configureGetBackup();
         this.configureDeleteBackup();
         this.configureDownloadBackup();
@@ -51,22 +49,29 @@ export default class BackupController {
     }
 
     configureUpload(){
-        let instance = this;
         let functionToHandle = async function(req, res){ //define the get function
             let file = MyExpressRouter.getSingleFileUpload(req, res);
             if(file){
                 let filename = MyExpressRouter.getFileUploadName(file);
-                let dstFilePath = DatabaseBackupModule._getPathOfBackup(filename);
-                FileSystemHelper.mkdirpathForFile(dstFilePath); //Check if Folder exists
-                FileSystemHelper.deleteFile(dstFilePath); //Delte the old File
-                file.mv(dstFilePath, function (err) { //move the file, mayby overrite it, i dont care
-                    if (err) {
-                        MyExpressRouter.respondWithInternalErrorMessage(res, err);
-                    } else {
-                        MyExpressRouter.responseWithSuccessJSON(res, {});
-                    }
-                });
+                this.backupModule.uploadBackup(filename, file).then(success => {
+                    MyExpressRouter.responseWithSuccessJSON(res, {});
+                }).catch(err => {
+                    MyExpressRouter.respondWithInternalErrorMessage(res, err);
+                })
             }
+        }
+        let route = this.route + "/upload";
+        this.myExpressRouter.withPermissionMiddleware(route, DefaultControllerHelper.CRUD_CREATE, MyExpressRouter.adminRoutes_accessControlResource, functionToHandle, false);
+    }
+
+    configureCreateBackup(){
+        let functionToHandle = async function(req, res){ //define the get function
+            let filename = req.body.filename || this.backupModule.createBackupFilename("custom");
+            this.backupModule.createBackup(filename).then(success => {
+                MyExpressRouter.responseWithSuccessJSON(res, {});
+            }).catch(err => {
+                MyExpressRouter.respondWithInternalErrorMessage(res, err);
+            })
         }
         let route = this.route + "/";
         this.myExpressRouter.withPermissionMiddleware(route, DefaultControllerHelper.CRUD_CREATE, MyExpressRouter.adminRoutes_accessControlResource, functionToHandle, false);

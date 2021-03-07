@@ -35,7 +35,6 @@ export default class MyTokenHelper {
     }
 
     async rejectAllRefreshTokensFromAuthObject(authObject){
-        console.log("Reject all RefreshTokens from Users authObject");
         let authMethod = authObject[AuthConnector.AUTH_METHOD];
         let username = authObject.username;
         let key = authMethod+"."+username;
@@ -43,25 +42,20 @@ export default class MyTokenHelper {
         let redisUserRefreshTokensKey = usersRefreshTokensKey+key;
         let usersRefreshTokensAsString = await MyExpressRouter.getFromRedis(redisUserRefreshTokensKey);
         if(!!usersRefreshTokensAsString){
-            console.log("Found RefreshTokens for User");
             let usersRefreshTokens = JSON.parse(usersRefreshTokensAsString);
             let refreshTokens = Object.keys(usersRefreshTokens);
             for(let i=0; i<refreshTokens.length; i++){
-                console.log("Reject Users ResfreshToken: "+i+"/"+refreshTokens.length);
                 let refreshToken = refreshTokens[i];
                 await this.rejectRefreshToken(refreshToken);
             }
-            console.log("Rejected all Users RefreshTokens");
             return true;
         }
     }
 
     async rejectRefreshToken(refreshToken){
-        console.log("rejectRefreshToken start");
         let redisRefreshTokensKey = refreshTokenKey+refreshToken;
         let authObject = await MyTokenHelper.getAuthObjectFromRefreshToken(refreshToken);
         if(!!authObject){
-            console.log("RefreshToken was found, now reject it");
             let authMethod = authObject[AuthConnector.AUTH_METHOD];
             let username = authObject.username;
             let key = authMethod+"."+username;
@@ -69,7 +63,6 @@ export default class MyTokenHelper {
             let usersRefreshTokensAsString = await MyExpressRouter.getFromRedis(redisUserRefreshTokensKey);
             let usersRefreshTokens = !!usersRefreshTokensAsString ? JSON.parse(usersRefreshTokensAsString) : {};
             delete usersRefreshTokens[refreshToken];
-            console.log("Save all users RefreshTokens");
             if(Object.keys(usersRefreshTokens).length===0){
                 await MyExpressRouter.deleteInRedis(redisUserRefreshTokensKey);
             } else {
@@ -77,7 +70,6 @@ export default class MyTokenHelper {
             }
 
         }
-        console.log("Reject RefreshToken anyway");
         await MyExpressRouter.deleteInRedis(redisRefreshTokensKey);
         return true;
     }
@@ -85,7 +77,6 @@ export default class MyTokenHelper {
     static async getAuthObjectFromRefreshToken(refreshToken){
         let redisRefreshTokensKey = refreshTokenKey+refreshToken;
         let authObjectAsString = await MyExpressRouter.getFromRedis(redisRefreshTokensKey);
-        console.log("getAuthObjectFromRefreshToken: "+authObjectAsString)
         if(!!authObjectAsString){
             return JSON.parse(authObjectAsString)
         }
@@ -117,7 +108,6 @@ export default class MyTokenHelper {
             //console.log(refreshToken);
             return refreshToken;
         }
-        console.log("Refresh Token already exists ?");
         return null;
     }
 
@@ -130,11 +120,7 @@ export default class MyTokenHelper {
      */
     createAccessToken(authObject) {
         this.logger.info("[MyTokenHelper] createToken: "+JSON.stringify(authObject));
-        console.log("createToken");
-        console.log(authObject);
         let token = jwt.sign(authObject, jwtSecret, {expiresIn: accessToken_expirationTime});
-        console.log("token:");
-        console.log(token);
         return token;
     }
 

@@ -2,7 +2,7 @@ import MyExpressRouter from "../module/MyExpressRouter";
 import ServerAPI from "../ServerAPI";
 import DefaultControllerHelper from "../helper/DefaultControllerHelper";
 import SystemInformationSchedule from "../schedules/SystemInformationSchedule";
-import BackupController from "./BackupController";
+import BackupController from "../plugins/backupPlugin/BackupController";
 
 export default class ServerController {
 
@@ -26,8 +26,6 @@ export default class ServerController {
         //this.configureCrash();
         this.configureGetTime();
         this.configureGetSystemInformations();
-
-        this.backupController = new BackupController(this.logger, this.models, this.expressApp, this.myAccessControl, this.myExpressRouter, this.route+"/backups")
     }
 
     configureRestart(){

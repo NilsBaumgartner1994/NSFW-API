@@ -4,13 +4,13 @@ import MyAccessControl from "./../module/MyAccessControl";
 const basicAuth = require("express-basic-auth");
 
 /**
- * The My Express Router which is the core functionality. It setups all controllers and handles routes
+ * Implementation of an Auth Interface by a config list
  */
 export default class AuthConfigList {
 
-    static AUTH_METHOD = "configList";
+    static AUTH_METHOD = "configList";  //Required name for auth interface
+    static AUTH_NAME = "Config List"; //Required Displayname for auth interface
 
-    static AUTH_NAME = "Config List";
     static PARAM_USERNAME = "username";
     static PARAM_PASSWORD = "password";
 

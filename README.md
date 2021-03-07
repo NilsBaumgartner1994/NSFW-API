@@ -4,3 +4,8 @@ This Framework will create a REST API for given sequelize models with authorizat
 
 ## Requirements
 - Sequelize Version ^5.21.3
+- SequelizeConfig:
+    "username": "USERNAME",
+    "password": "PASSWORD",
+    "database": "production",
+    "dialect": "DIALECT",

@@ -119,6 +119,7 @@ export default class SequelizeRouteHelper {
         }
 
         //we need the tablename, otherwise it would be ambigous for example UserRoles and UserFriends
+        // or RESOURCE_User ambigous to ASSOCIATION_User if user if befriended with a user
         return reqLocalsKey+"_"+primaryKeyAttribute;
     }
 

@@ -1,4 +1,4 @@
-import FileSystemHelper from "../helper/FileSystemHelper";
+import FileSystemHelper from "../../helper/FileSystemHelper";
 
 const path = require('path');
 

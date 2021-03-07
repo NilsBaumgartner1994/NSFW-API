@@ -278,17 +278,10 @@ export default class DefaultControllerHelper {
         delete queryCopy.limit;
         delete queryCopy.offset;
         delete queryCopy.order;
-        console.log(req.query);
         let params = req.query.params || "{}";
-        console.log(params);
         params = JSON.parse(params);
-        console.log(params);
         let queryFiltered = permission.filter(params); //filter all now allowed query variables
-        console.log("filtered by permission");
         queryFiltered = this.parseOperatorContent(queryFiltered);
-        console.log("queryFiltered:");
-        console.log(JSON.stringify(queryFiltered));
-
         let sequelizeQuery = {include: includeModels, where: queryFiltered};
 
         if(req.query.limit){ //check for limit
@@ -309,15 +302,10 @@ export default class DefaultControllerHelper {
     }
 
     async handleAssociationIndex(req,res,resource,myAccessControl,accessControlResource,resourceName,functionNameToCall,isOwn,includeModels = []){
-        console.log("handleAssociationIndex");
 
         let permission = DefaultControllerHelper.getPermission(req,myAccessControl,accessControlResource,DefaultControllerHelper.CRUD_READ,isOwn);
         if(permission.granted){
-            console.log("Permission granted");
-            console.log(resourceName);
-            console.log(resource);
             let sequelizeQuery = this.getSequelizeQuery(req,permission,includeModels);
-            console.log("functionNameToCall: "+functionNameToCall);
             resource[functionNameToCall](sequelizeQuery).then(resources => { //get resources
                 let dataJSON = DefaultControllerHelper.filterResourcesWithPermission(resources, permission); //filter
                 this.logger.info("[DefaultControllerHelper] handleAssociationIndex - " + resourceName);

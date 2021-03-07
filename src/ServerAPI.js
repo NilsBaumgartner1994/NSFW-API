@@ -9,7 +9,7 @@ import MyExpressRouter from "./module/MyExpressRouter"; //Routing Module
 import MyLogger from "./module/MyLogger"; //Logger Module
 import FancyTerminal from "./helper/FancyTerminal";
 import SequelizeModelLoader from "./helper/SequelizeModelLoader";
-import DatabaseBackupModule from "./module/DatabaseBackupModule";
+import DatabaseBackupModule from "./plugins/backupPlugin/DatabaseBackupModule";
 
 /**
  * ServerAPI Starts here
@@ -53,7 +53,6 @@ var myServerAPILogger,
     mySystemLogger,
     systemLogger,
     expressApp,
-    databaseBackupModule,
     myAccessControl,
     myExpressRouter,
     sequelizeConfig,
@@ -83,7 +82,8 @@ export default class ServerAPI {
         this.serverConfig = serverConfig;
         this.sequelizeConfig = sequelizeConfig;
         this.pathToModels = pathToModels;
-        this.numCPUs = isNaN(numCPUs) ? os.cpus().length : numCPUs;
+        this.registeredPlugins = {};
+        this.numCPUs = isNaN(numCPUs) ? os.cpus().length : Math.max(numCPUs, 1); //atleast one worker
     }
 
     async start(){
@@ -94,6 +94,19 @@ export default class ServerAPI {
         sequelizeConfig = this.sequelizeConfig;
         redisPort = this.serverConfig.redisPort;
         await startServer();
+    }
+
+    registerPlugin(pluginName, pluginInstance){
+        if(typeof pluginName==="string" && pluginName.length > 0 && !!pluginInstance && !this.registeredPlugins[pluginName]){
+            if(
+                typeof pluginInstance.activateMasterPlugin === "function" &&
+                typeof pluginInstance.activateWorkerPlugin === "function"
+            ){
+                this.registeredPlugins[pluginName] = pluginInstance;
+                return true;
+            }
+        }
+        return false;
     }
 
     static getWorkderId(){
@@ -123,17 +136,22 @@ export default class ServerAPI {
             });
             process.send({workerID: workerID, type: type, message: message}, test);
             return;
-        }
+        } else {
+            if(!type || type===ServerAPI.MESSAGE_TYPE_CONSOLE){
+                return await FancyTerminal.addWorkerOutput(workerID, message);
+            }
+            if(type === ServerAPI.MESSAGE_TYPE_COMMAND){
+                if(message === ServerAPI.COMMAND_RESTART){
+                    ServerAPI.sendToMaster(null, null, "Restarting all Workers");
+                    await shutdownWorkers(SIGNAL_PEACEFULL_SHUTDOWN);
 
-        if(!type || type===ServerAPI.MESSAGE_TYPE_CONSOLE){
-            return await FancyTerminal.addWorkerOutput(workerID, message);
-        }
-        if(type === ServerAPI.MESSAGE_TYPE_COMMAND){
-            if(message === ServerAPI.COMMAND_RESTART){
-                ServerAPI.sendToMaster(null, null, "Restarting all Workers");
-                await shutdownWorkers(SIGNAL_PEACEFULL_SHUTDOWN);
-                createCluster();
-                return;
+                    //since the workers shut down, we shouold restart our own schedule
+                    scheduleModule.cancelAllSchedules();
+                    createScheduleModule();
+
+                    createCluster();
+                    return;
+                }
             }
         }
     }
@@ -181,7 +199,9 @@ function shutdownWorkers(signal){
     //https://medium.com/@gaurav.lahoti/graceful-shutdown-of-node-js-workers-dd58bbff9e30
     ServerAPI.sendToMaster(null, null, "Workers are now being shut down");
     return new Promise((resolve, reject) => {
-        if (!cluster.isMaster) { return resolve() }
+        if (!cluster.isMaster) {  // if we are not master just skip
+            return resolve()
+        }
 
         const wIds = Object.keys(cluster.workers)
         if (wIds.length === 0) { return resolve() }
@@ -293,10 +313,8 @@ function createCluster() {
 async function prepareMasterServer() {
     ServerAPI.sendToMaster(null, null, "prepareMasterServer");
     prepareSharedLoggerAndModules();
-    createMasterLoggers(); //keep this order
-
-    //createMasterExpressApp();
-    //startWorkerServer(config.metricsPort); //we will listen on 9999 and we are a "worker"
+    createMasterLoggers(); //keep this after prepareSharedLoggerAndModules()
+    await activatePlugins(); //just before we would start the server
 }
 
 /**
@@ -304,8 +322,12 @@ async function prepareMasterServer() {
  */
 function prepareSharedLoggerAndModules() {
     createSharedLoggers();
-    scheduleModule = new ScheduleModule(serverAPILogger,models,redisClient, serverConfig);
+    createScheduleModule();
     createSharedModules();
+}
+
+function createScheduleModule(){
+    scheduleModule = new ScheduleModule(serverAPILogger,models,redisClient, serverConfig);
 }
 
 /**
@@ -318,7 +340,27 @@ async function prepareWorkerServer() {
     createWorkerLoggers(); //keep this order
     createWorkerExpressApp();
     await createWorkerModules();
+    await activatePlugins(); //just before we would start the server
     startWorkerServer();
+}
+
+async function activatePlugins(){
+    let registeredPlugins = ServerAPI.instance.registeredPlugins;
+    let pluginNames = Object.keys(registeredPlugins);
+
+    let schedule = scheduleModule.getSchedule();
+    for(let i=0; i<pluginNames.length; i++){
+        let pluginName = pluginNames[i];
+        let plugin = registeredPlugins[pluginName];
+        let pluginLogger = new MyLogger(pluginName).getLogger();
+        let route = MyExpressRouter.getPluginRoute(pluginName);
+
+        if(cluster.isMaster){
+            await plugin.activateMasterPlugin(pluginLogger, models, schedule, redisClient, serverConfig, sequelizeConfig, null);
+        } else {
+            await plugin.activateWorkerPlugin(pluginLogger, models, schedule, redisClient, serverConfig, sequelizeConfig, myExpressRouter, route);
+        }
+    }
 }
 
 /***********************************************************************************************************************
@@ -428,7 +470,6 @@ async function createWorkerModules() {
         redisClient,
         serverConfig
     );
-    databaseBackupModule = new DatabaseBackupModule(serverAPILogger, models, sequelizeConfig)
     await myExpressRouter.configureController(); //configure the routes
 }
 

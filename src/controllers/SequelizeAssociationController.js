@@ -72,7 +72,7 @@ export default class SequelizeAssociationController {
 
             if(hasManyAssociated){ // e.G. User has many Feedbacks
                 //configure the params for identifing the associated resource
-                SequelizeController.configurePrimaryParamsChecker(this.expressApp,associationTargetModel,accessControlAssociationResource);
+                SequelizeController.configurePrimaryParamsChecker(this.expressApp,associationTargetModel,accessControlAssociationResource, accessControlAssociationResource);
 
                 // GET /Users/1/associations/count/Feedbacks
                 this.configureMultipleAssociationCountRoute(model,pluralName,modelAssociationName);
@@ -93,7 +93,7 @@ export default class SequelizeAssociationController {
                 // DELETE /Users/1/associations/Feedbacks/3 ==> Remove Association to Feedback
                 this.configureMultipleAssociationsRemoveSpecificRoute(model,modelAssociationName,associationTargetModel,accessControlAssociationResource,singularName);
             } else {
-                SequelizeController.configurePrimaryParamsChecker(this.expressApp,associationTargetModel,accessControlAssociationResource);
+                SequelizeController.configurePrimaryParamsChecker(this.expressApp,associationTargetModel,accessControlAssociationResource, accessControlAssociationResource);
 
                 // Method does not exist --> Not implemented GET /Users/1/associations/count/Feedback
 
@@ -146,7 +146,10 @@ export default class SequelizeAssociationController {
         let associationFunction = "get"+modelAssociationName;
         let functionForModel = async function(req, res){ //define the get function
             //TODO maybe use: DefaultControllerHelper.handleAssociationIndex
-            let resource = req.locals[accessControlAssociationResource];
+            let tableName = SequelizeHelper.getTableName(model);
+            let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
+
+            let resource = req.locals[accessControlResource];
             this.myExpressRouter.defaultControllerHelper.handleAssociationIndex(req,res,resource,this.myAccessControl,accessControlAssociationResource,modelAssociationName,associationFunction,false)
         }
 
@@ -322,18 +325,28 @@ export default class SequelizeAssociationController {
 
         //console.log("Configure set Associtation: "+tableName);
         let functionForModel = async function(req, res){ //define the get function
+            console.log("SET ASSOCIATION");
 
             let permission = DefaultControllerHelper.getPermission(req,this.myAccessControl,accessControlAssociationResource,DefaultControllerHelper.CRUD_CREATE,false);
             if(permission.granted){
                 let resource = req.locals[accessControlResource];
+                console.log(resource);
 
                 let currentAssociationResource = await resource[associationFunction]();
                 if(!!currentAssociationResource){
                     DefaultControllerHelper.respondWithForbiddenMessage(req,res,"Create "+accessControlAssociationResource+" Unassociate first or use PUT to override");
                     return;
                 } else {
+                    console.log("Okay no resource associated yet");
+                    console.log(accessControlAssociationResource);
+                    console.log(req.locals);
+
                     let newAssociationResource = req.locals[accessControlAssociationResource];
+                    console.log(newAssociationResource);
+
                     let isAssociated = await resource["set"+singularName](newAssociationResource);
+                    console.log(isAssociated);
+
                     if(isAssociated){
                         DefaultControllerHelper.respondWithSuccessMessage(req, res); //TODO better response ? Maybe handleGet ?
                     } else {
@@ -350,6 +363,8 @@ export default class SequelizeAssociationController {
         }
 
         let associationRoute = SequelizeRouteHelper.getModelAssociationInstanceRoute(model,modelAssociationName,accessControlAssociationResource,associationModel)
+        console.log(associationRoute);
+
         this.expressApp.post(associationRoute, functionForModel.bind(this)); // register route in express
     }
 

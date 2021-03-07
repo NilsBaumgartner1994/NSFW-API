@@ -37,13 +37,16 @@ export default class SequelizeController {
      * @param model the given sequelize moodel
      */
     configureModelRoutes(model){
+        let tableName = SequelizeHelper.getTableName(model);
+        let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
+
         this.configureCount(model); //configure the index route
         this.configureIndex(model); //configure the index route
         this.configureGet(model); //configure the get route
         this.configureDelete(model);
         this.configureUpdate(model);
         this.configureCreate(model);
-        SequelizeController.configurePrimaryParamsChecker(this.expressApp,model); //configure the params for identifing the resource
+        SequelizeController.configurePrimaryParamsChecker(this.expressApp,model, accessControlResource, null); //configure the params for identifing the resource
     }
 
     configureCount(model){
@@ -66,7 +69,6 @@ export default class SequelizeController {
      */
     configureIndex(model){
         let tableName = SequelizeHelper.getTableName(model);
-        console.log("Configure Index for: "+tableName);
         let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
 
         let functionForModel = function(req, res) { //define the index function
@@ -170,11 +172,11 @@ export default class SequelizeController {
      * @param model the sequelize model
      * @param reqLocalsKey the key the found resource will be saved in req.locals
      */
-    static configurePrimaryParamsChecker(expressApp, model, reqLocalsKey = null){
+    static configurePrimaryParamsChecker(expressApp, model, accessControlResource, reqLocalsKey = null){
         let primaryKeyAttributes = SequelizeHelper.getPrimaryKeyAttributes(model); // get primary key attributes
         for(let i=0; i<primaryKeyAttributes.length; i++){ //for every primary key
             let primaryKeyAttribute = primaryKeyAttributes[i];
-            SequelizeController.configurePrimaryParamChecker(expressApp, model,primaryKeyAttribute, reqLocalsKey); //configure param checker
+            SequelizeController.configurePrimaryParamChecker(expressApp, model,primaryKeyAttribute, accessControlResource, reqLocalsKey); //configure param checker
         }
     }
 
@@ -184,13 +186,11 @@ export default class SequelizeController {
      * @param reqLocalsKey the key the found resource will be saved in req.locals
      * @param primaryKeyAttribute
      */
-    static configurePrimaryParamChecker(expressApp, model, primaryKeyAttribute, reqLocalsKey = null){
+    static configurePrimaryParamChecker(expressApp, model, primaryKeyAttribute, accessControlResource, reqLocalsKey = null){
         // get the identifier
         let modelPrimaryKeyAttributeParameter = SequelizeRouteHelper.getModelPrimaryKeyAttributeParameter(model,primaryKeyAttribute,reqLocalsKey);
         // link identifier to paramchecker
-        console.log("configurePrimaryParamChecker");
-        console.log(primaryKeyAttribute);
-        expressApp.param(modelPrimaryKeyAttributeParameter, SequelizeController.paramPrimaryParamChecker.bind(this,primaryKeyAttribute,reqLocalsKey,model));
+        expressApp.param(modelPrimaryKeyAttributeParameter, SequelizeController.paramPrimaryParamChecker.bind(this,primaryKeyAttribute,accessControlResource,model));
     }
 
     /**
@@ -203,18 +203,19 @@ export default class SequelizeController {
      * @param next the next middleware
      * @param primaryKeyAttributeValue the primary key value to check
      */
-    static paramPrimaryParamChecker(primaryKeyAttribute, reqLocalsKey = null, model, req, res, next, primaryKeyAttributeValue) {
+    static paramPrimaryParamChecker(primaryKeyAttribute, accessControlResource, model, req, res, next, primaryKeyAttributeValue) {
         let tableName = SequelizeHelper.getTableName(model);
-        let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
-        if(!reqLocalsKey){
-            reqLocalsKey = tableName
-        }
+
+        console.log("")
+        console.log("paramPrimaryParamChecker");
+        console.log(accessControlResource);
+        console.log("")
 
         // define a search clause for the model
         let searchJSON = req.locals.searchJSON || {}; // get or init
-        let modelSearchJSON = searchJSON[reqLocalsKey] || {}; // get for model
+        let modelSearchJSON = searchJSON[accessControlResource] || {}; // get for model
         modelSearchJSON[primaryKeyAttribute] = primaryKeyAttributeValue; // set search param
-        searchJSON[reqLocalsKey] = modelSearchJSON; // save for model
+        searchJSON[accessControlResource] = modelSearchJSON; // save for model
         req.locals.searchJSON = searchJSON; // save in locals for later use
 
         //we search for all, since there are maybe multiple primary keys

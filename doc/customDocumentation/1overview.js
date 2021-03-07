@@ -5,8 +5,8 @@
 
 /**
  * @apiDefine 1Overview 1. Overview
- * Welcome to the API Documentation of GEG. There are a lot of informations in here. I recommend you to read at least the small 4 Chapters 1-4 and then you should be good enough prepared
- * to handle this API. This Document can be found in /GEG/API/doc/customDocumentation/1overview.js.
+ * Welcome to the API Documentation of NSFW-API. There are a lot of informations in here. I recommend you to read at least the small 4 Chapters 1-4 and then you should be good enough prepared
+ * to handle this API. This Document can be found in /doc/customDocumentation/1overview.js.
  * ! If you make any changes in the documentation please run the command "npm run doc" to generate this document.
  */
 
@@ -19,12 +19,19 @@
 /**
  * @api {INTRODUCTION} Function/Overview 1.2 Function overview
  * @apiGroup 1Overview
- * @apiDescription This API can handle a lot of functionalism's. Here comes a short collection of the most important functions.
+ * @apiDescription This API contains some neat things out of the box, but lets you adapt it for your purposes.
  *
- * @apiParam Server-Information Show vital information of the server, version number
- * @apiParam User-Management Create, read, update and delete users. Manage friendships and meetings. Notify users via push notifications
- * @apiParam Meal-Management Manage, like, comment and rate meals. Up- and download images of meals.
- * @apiParam Building-Management Manage buildings. Up- and download images of buildings
- * @apiParam Washing-Machine-Overview View the state of washing machines
- * @apiParam Feedback-Management Manage Feedback from users
+ * @apiParam Models Define models and get access to auto generated REST routes with permission system. Use Hooks (pre- and post-creation) for models, to customize the behavior of default controllers.
+ * @apiParam Authentication Use default minimalistic authentications or use/create custom authentication modules. With an RBAC (Role-Based-Access-Control) you can check even for attributes.
+ * @apiParam Backups Profit of automatic generated backups (of models) for SqLite. You can create own support for your desired database management tool.
+ * @apiParam Schedules Register own multi- or single-threaded schedules. We use the standard node-schedule ;-).
+ * @apiParam Custom-Controllers Not enough control of the flow ? Create you own custom controllers with easy permission checks.
+ */
+
+/**
+ * @api {INTRODUCTION} Quickstart 1.3 Quickstart
+ * @apiGroup 1Overview
+ * @apiDescription If you want to start and test a bit, look at the /src/development.js file ;-)
+ *
+ * @apiParam TODO Create a small project with multiple examples for every Function overview
  */

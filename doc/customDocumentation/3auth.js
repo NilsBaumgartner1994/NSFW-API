@@ -5,29 +5,73 @@
  */
 
 /**
- * @api {INTRODUCTION} AdminAuthentication 3.1 Admin
+ * @api {INTRODUCTION} AuthenticationSetup 3.1 Setup
  * @apiGroup 3Auth
- * @apiDescription To get an admin role you need to run request on the same machine/IP. This can be achieved via an proxy server which has a basic authentication. In this repository there is a proxy server already installed, which only needs to be started.
- * @apiParamExample {js} Admin authentication example:
- let username = "admin";
- let password = "password";
- let portProxy = 3002;
- let url = "https://localhost:"+portProxy+"/api/secretArea";
- let encoded = btoa(username+":"+password); //encoded username and password
- //header creation with username and password
- let headers = new Headers({
-    'Content-Type': 'application/json',
-    'Authorization': 'Basic ' + encoded
+ * @apiDescription Here comes how to setup the server
+ * @apiParamExample {js} Config List
+ import {ServerAPI, AuthConfigList} from "nsfw-api";
+
+ let serverConfig = {
+    "port": 3001,
+    ...
+    "auth": {
+      "disabled": false,
+      "methods": {
+        "configList": true,
+      }
+    }
+  }
+
+ AuthConfigList.setAdminsFile({
+     admin: "SuperSecretPassword",
+     alsoAdminUserName: "AnotherPassword",
  });
- fetch(url, {
-    method: 'GET',
-    Accept: 'application/json',
-    headers: headers, //adding headers
- })
- .then((response) => response.json())
- .then((responseJson) => {
-    console.log(responseJson); //receiving response
- });
+
+ //for configOfModels and pathToModels see later documentation
+ let server = new ServerAPI(serverConfig, configOfModels, pathToModels, "auto");
+ server.start();
+
+ * @apiParamExample {js} Custom Authenticator
+ import {ServerAPI, AuthConnector} from "nsfw-api";
+
+ AuthConnector.registerAuthMethod(YourCustomAuthenticator);
+
+ //for configOfModels and pathToModels see later documentation
+ let server = new ServerAPI(serverConfig, configOfModels, pathToModels, "auto");
+ server.start();
+
+
+ class MyCustomAuth {
+
+    static AUTH_METHOD = "customAuth";  //Required name for auth interface
+    static AUTH_NAME = "My Custom Auth"; //Required displayname for auth interface
+
+    static PARAM_USERNAME = "username";
+    static PARAM_PASSWORD = "password";
+
+    static getNeededAuthParams(){
+        return {
+            name : MyCustomAuth.AUTH_NAME,
+            params: {
+                [MyCustomAuth.PARAM_USERNAME] : "username",
+                [MyCustomAuth.PARAM_PASSWORD]: "password",
+            }
+        }
+    }
+
+    static async authorize(authObject) {
+        //authObject contains all values for defined params
+
+        let isAuthorized = ...
+        if(!isAuthorized){
+            return AuthConnector.getError(AuthConnector.ERROR_CREDENTIALS_INCORRECT);
+        } else {
+            return AuthConnector.getSuccessMessage(AuthConfigList.AUTH_METHOD, MyAccessControl.roleNameAdmin, username, username,null);
+        }
+    }
+
+
+}
  */
 
 /**

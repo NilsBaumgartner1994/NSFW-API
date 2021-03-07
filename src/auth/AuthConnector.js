@@ -84,7 +84,6 @@ export default class AuthConnector {
                 return false;
             }
         }
-        console.log("yes all keys given");
         return true;
     }
 

@@ -30,15 +30,12 @@ export default class SequelizeSchemeController {
     }
 
     configureModelSchemesIndex(){
-        console.log("configureModelSchemesIndex");
         const grants = this.myAccessControl.getGrants();
         const tableNames = SequelizeHelper.getModelTableNames(this.models);
         const allModelRoutes = SequelizeRouteHelper.getAllModelRoutes(this.models);
 
         let functionForModel = function(req, res){
             let modelsWithPermission = Object.keys(grants[req.locals.currentUser.role]); //all permission groups
-            console.log("modelsWithPermission");
-            console.log(modelsWithPermission);
 
             let intersection = [];
             for(let i=0; i<tableNames.length; i++){
@@ -94,8 +91,6 @@ export default class SequelizeSchemeController {
         //console.log("configureModelSchemeAssociationsRoute: route: "+route);
 
         let functionForModel = function(req, res){
-            console.log("Handle "+route);
-            console.log(tableAssociations);
             let modelsWithPermission = Object.keys(grants[req.locals.currentUser.role]);
             console.log(modelsWithPermission);
             let filteredAssociationData = {};

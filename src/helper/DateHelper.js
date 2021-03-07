@@ -74,13 +74,31 @@ export default class DateHelper {
         let seconds = day.getSeconds();
 
         let yyyy = today.getFullYear();
-        if (dd < 10) {
+        if (dd.length < 2) {
             dd = '0' + dd;
         }
-        if (mm < 10) {
+        if (mm.length < 2) {
             mm = '0' + mm;
         }
         return yyyy + '' + mm + '' + dd + "" + hours + "" + minutes + "" + seconds;
+    }
+
+    static dateToYYYY_MM_DD_HH_MM_SS_MSMS(date){
+        let dd = date.getDate();
+        let mm = date.getMonth() + 1; //January is 0!
+
+        let hours = date.getHours();
+        let minutes = date.getMinutes();
+        let seconds = date.getSeconds();
+        let milliseconds = date.getMilliseconds();
+
+        let yyyy = date.getFullYear();
+
+        dd = DateHelper.pad(dd, 2);
+        mm = DateHelper.pad(mm, 2);
+        milliseconds = DateHelper.pad(milliseconds, 4);
+
+        return yyyy + '-' + mm + '-' + dd + "-" + hours + "-" + minutes + "-" + seconds+"-"+milliseconds;
     }
 
     /**
@@ -90,7 +108,7 @@ export default class DateHelper {
      * @returns {string}
      */
     static pad(num, size) {
-        var s = num + "";
+        let s = num + "";
         while (s.length < size) s = "0" + s;
         return s;
     }

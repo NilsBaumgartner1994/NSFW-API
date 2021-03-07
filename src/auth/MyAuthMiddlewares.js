@@ -12,8 +12,6 @@ import AuthConnector from "./AuthConnector";
 export default class MyAuthMiddlewares {
 
     constructor(logger, expressApp, routeAuth, authConfig) {
-        console.log("export default class MyAuthMiddlewares ");
-
         this.logger = logger;
         this.expressApp = expressApp;
         this.routeAuth = routeAuth;
@@ -94,17 +92,12 @@ export default class MyAuthMiddlewares {
     }
 
     handleGetCurrentUser(req,res){
-        console.log("handleGetCurrentUser");
         let currentUser = req.locals.currentUser;
-        console.log(currentUser);
         MyExpressRouter.responseWithSuccessJSON(res, currentUser); //anyway answer normaly
     }
 
     handleGetAuthMethods(req,res){
-        console.log("handleGetAuthMethods");
         let dataJSON = AuthConnector.getAuthMethods();
-        console.log("dataJSON");
-        console.log(dataJSON);
         MyExpressRouter.responseWithSuccessJSON(res, dataJSON); //anyway answer normaly
     }
 
@@ -132,31 +125,23 @@ export default class MyAuthMiddlewares {
             let authorization = req.headers.authorization; //get auth headers
             if (!!authorization) { //if there are headers
                 const token = authorization.split(" ")[1]; //get the token Header: ACCESSTOKEN TheSuperCoolToken
-
-                console.log("Start verifikation");
                 //start verification of headers
                 this.tokenHelper.verifyToken(token, function (err, tokenPayload) { //verify the token
                     if (err != null) { //if there is an error
                         if (err.name === "TokenExpiredError") { //if token is Expired
-                            console.log("TokenExpiredError");
                             MyExpressRouter.responseWithErrorJSON(res, HttpStatus.UNAUTHORIZED, {message:'AccessTokenExpiredError'});
                             return;
                         } else { //thats an invalid token boy !
-                            console.log("TokenInvalid");
                             //logger.error("[" + workerID + "][MyExpressRouter] middlewareAuthToken - invalid token ! remoteAddress: " + ip);
                             MyExpressRouter.responseWithErrorJSON(res, HttpStatus.UNAUTHORIZED, {message:'AccessTokenInvalid'});
                             return;
                         }
                     }
-                    console.log("Check payload");
                     if (!!tokenPayload) { // payload was correct so we know which user this is
-                        console.log("found tokenPayload");
-                        console.log(tokenPayload);
                         req.locals.currentUser = tokenPayload || {};
                         if (!req.locals.currentUser.role) {
                             req.locals.currentUser.role = MyAccessControl.roleNameUser; // is nothing provided, you are atleast a user
                         }
-                        console.log("okay role set continue");
                     }
                     next();
                 });
@@ -165,7 +150,6 @@ export default class MyAuthMiddlewares {
                 next();
             }
         } catch (err) { //no headers found or some wrong headers provided
-
             console.log(err);
             logger.error("[MyExpressRouter] middlewareAuthToken - " + err.toString());
             next();
