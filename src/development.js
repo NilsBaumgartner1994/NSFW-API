@@ -2,6 +2,7 @@ import "regenerator-runtime/runtime.js";
 import ServerAPI from "./ServerAPI";
 import AuthConnector from "./auth/AuthConnector";
 import BackupPlugin from "./plugins/backupPlugin/BackupPlugin";
+import DefaultControllerHelper from "./helper/DefaultControllerHelper";
 
 const config = {
     "production": {
@@ -50,4 +51,11 @@ let pathToModels = currentPath+"/dev"; //path to models
 
 let server = new ServerAPI(config["server"], config["production"], pathToModels, 1);
 server.registerPlugin("BackupPlugin", new BackupPlugin());
+
+let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename("Users");
+DefaultControllerHelper.addHook(accessControlResource, DefaultControllerHelper.CRUD_READ, () => {console.log("READ")}, true);
+DefaultControllerHelper.addHook(accessControlResource, DefaultControllerHelper.CRUD_DELETE, () => {console.log("DELETE")}, true);
+DefaultControllerHelper.addHook(accessControlResource, DefaultControllerHelper.CRUD_CREATE, () => {console.log("CREATE")}, true);
+DefaultControllerHelper.addHook(accessControlResource, DefaultControllerHelper.CRUD_UPDATE, () => {console.log("DELETE")}, true);
+
 server.start();

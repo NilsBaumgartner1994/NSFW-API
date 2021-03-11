@@ -413,9 +413,7 @@ export default class DefaultControllerHelper {
      * @apiError (Error) {String} error A description of the error
      */
     async handleCreate(req, res, sequelizeResource, myAccessControl, accessControlResource, updateTableUpdateTimes = false, customAnswer=false) {
-        console.log("DefaultHandler handleCreate");
         let isOwn = DefaultControllerHelper.getOwningState(req,accessControlResource);
-        console.log("is own: "+isOwn);
         let permission = DefaultControllerHelper.handleDefaultPermissionCheck(req, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_CREATE, isOwn);
 
         this.logger.info("[DefaultControllerHelper] handleCreate - " + accessControlResource + " currentUser: " + req.locals.currentUser.id + " granted: " + permission.granted);

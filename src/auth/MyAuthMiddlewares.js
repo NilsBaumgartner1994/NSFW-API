@@ -169,7 +169,6 @@ export default class MyAuthMiddlewares {
     }
 
     async handleLogout(req,res){
-        console.log("### handleLogout ###");
         let refreshToken = req.locals.refreshToken;
         let success = await this.tokenHelper.rejectRefreshToken(refreshToken);
         this.resetRefreshTokenCookie(res);
@@ -190,7 +189,6 @@ export default class MyAuthMiddlewares {
     }
 
     async handleAuthorize(req, res){
-        console.log("handleGetNewRefreshToken");
         let authObject = req.locals.currentUser;
         let currentUser = req.locals.currentUser;
         let rememberMe = req.body.rememberMe;
@@ -205,7 +203,6 @@ export default class MyAuthMiddlewares {
     }
 
     handleRefreshAccessToken(req, res) {
-        console.log("handleGetNewAccessToken");
         let authObject = req.locals.currentUser;
         let currentUser = req.locals.currentUser;
 
@@ -231,7 +228,6 @@ export default class MyAuthMiddlewares {
      * @apiParam {String} plaintextSecret User's password as plain text.
      */
     async middlewareOnlyAuthenticatedViaRefreshToken(req, res, next) {
-        console.log("middlewareOnlyAuthenticatedViaRefreshToken");
         if(!!this.authConfig.disabled){
             console.log("Skip, auth is disabled");
             next();
@@ -243,20 +239,17 @@ export default class MyAuthMiddlewares {
 
         let cookiesRefreshToken = MyAuthMiddlewares.getRefreshTokenFromReq(req);
         if(!!cookiesRefreshToken){
-            console.log("Found cookiesRefreshToken");
             refreshToken = cookiesRefreshToken;
         }
 
         let bodyRefreshToken = req.body.refreshToken;
         if(!!bodyRefreshToken){
-            console.log("Found bodyRefreshToken");
             refreshToken = bodyRefreshToken;
         }
 
-        console.log("refreshToken: "+refreshToken);
         if(!!refreshToken){
             let authObject = await MyTokenHelper.getAuthObjectFromRefreshToken(refreshToken);
-            console.log(authObject);
+            //console.log(authObject);
             if(!!authObject){
                 req.locals.refreshToken = refreshToken;
                 req.locals.currentUser = authObject;
@@ -300,18 +293,12 @@ export default class MyAuthMiddlewares {
         req.locals.currentUser = {};
         req.locals.currentUser.role = MyAccessControl.roleNameGuest;
 
-        console.log(req.body);
-
         let auth = req.body.auth;
-        console.log(auth);
 
         if (!!auth) { //if a plaintext was provided
             let answer = await AuthConnector.authorize(auth);
-            console.log(answer);
             if(!!answer){
                 if(answer.success){
-                    console.log("middlewareOnlyAuthenticatedViaPlaintextSecret success");
-                    console.log(answer.auth);
                     req.locals.currentUser = answer.auth;
                     next();
                 } else if(!!answer.error){
