@@ -4,7 +4,9 @@ module.exports = {
     CustomControllers: require('./controllers/CustomControllers').default, // eslint-disable-line global-require
     AuthConnector: require('./auth/AuthConnector').default, // eslint-disable-line global-require
     DatabaseBackupModule: require('./plugins/backupPlugin/DatabaseBackupModule').default, // eslint-disable-line global-require
+
     MyExpressRouter: require('./module/MyExpressRouter').default, // eslint-disable-line global-require
+    ScheduleModule: require('./module/ScheduleModule').default, // eslint-disable-line global-require
 
     DefaultControllerHelper: require('./helper/DefaultControllerHelper').default, // eslint-disable-line global-require
     StringHelper: require('./helper/StringHelper').default, // eslint-disable-line global-require

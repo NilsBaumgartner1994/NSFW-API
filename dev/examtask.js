@@ -7,8 +7,6 @@ module.exports = (sequelize, DataTypes) => {
     name: {type: DataTypes.STRING, allowNull: false}, //required
       points: {type: DataTypes.INTEGER, allowNull: false}, //required
       position: {type: DataTypes.INTEGER, allowNull: true},
-      intro: {type: DataTypes.TEXT, allowNull: true},
-      hint: {type: DataTypes.TEXT, allowNull: true},
   }, {});
     Examtask.associate = function(models) {
     // associations can be defined here

@@ -1,0 +1,13 @@
+{
+  "production": {
+    "username": "root",
+    "password": "CookiesAreVeryGood",
+    "database": "production",
+    "host": "localhost",
+    "dialect": "sqlite",
+    "storage": "database/dbname.db",
+    "operatorsAliases": 0,
+    "logging": false,
+    "insecureAuth": true
+  }
+}

@@ -73,6 +73,7 @@ export default class SequelizeController {
 
         let functionForModel = function(req, res) { //define the index function
             //just call the default index
+            console.log("Handle Index");
             this.myExpressRouter.defaultControllerHelper.handleIndex(req, res, model, this.myAccessControl, accessControlResource);
         }
 

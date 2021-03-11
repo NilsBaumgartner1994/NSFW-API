@@ -4,6 +4,17 @@ import AuthConnector from "./auth/AuthConnector";
 import BackupPlugin from "./plugins/backupPlugin/BackupPlugin";
 
 const config = {
+    "production": {
+        "username": "root",
+        "password": "CookiesAreVeryGood",
+        "database": "production",
+        "host": "localhost",
+        "dialect": "sqlite",
+        "storage": "database/dbname.db",
+        "operatorsAliases": 0,
+        "logging": false,
+        "insecureAuth": true
+    },
     "server": {
         "port": 3001,
         "redisPort": 6379,
@@ -37,6 +48,6 @@ const config = {
 var currentPath = process.cwd();
 let pathToModels = currentPath+"/dev"; //path to models
 
-let server = new ServerAPI(config["server"], null, pathToModels, 1);
+let server = new ServerAPI(config["server"], config["production"], pathToModels, 1);
 server.registerPlugin("BackupPlugin", new BackupPlugin());
 server.start();

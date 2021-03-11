@@ -6,6 +6,7 @@
   "scripts": {
     "start": "npm run build && node dist/src/development.js",
     "build": "rm -rf ./dist/ && webpack --mode development",
+    "migrate": "export NODE_ENV=production && npx sequelize-cli db:migrate",
     "doc": "./node_modules/.bin/apidoc -i src/ -i doc/customDocumentation/ -o doc/",
     "upload": "npm run build && rm -rf ./dist/src/development.js && npm version patch && npm publish"
   },
@@ -81,9 +82,9 @@
     "rand-token": "^1.0.1",
     "redis": "^2.8.0",
     "redis-server": "^1.2.2",
-    "sequelize": "5.21.3",
-    "sequelize-cli": "5.5.0",
-    "sequelize-file": "0.3.0",
+    "sequelize": "5.22.3",
+    "sequelize-cli": "5.5.1",
+    "sequelize-file": "^0.3.0",
     "sqlite3": "^4.2.0",
     "systeminformation": "^4.30.1",
     "tls": "0.0.1",

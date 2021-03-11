@@ -352,6 +352,7 @@ export default class DefaultControllerHelper {
         }
 
         if (permission.granted) { //can you read any of this resource ?
+            console.log("Permission granted");
             let redisClient = MyExpressRouter.redisClient; //get the client
             if(!!redisKey && !DefaultControllerHelper.isQueryInRequest(req)){
                 let role = req.locals.currentUser.role; //get users role
@@ -369,6 +370,8 @@ export default class DefaultControllerHelper {
                             this.logger.info("[DefaultControllerHelper] handleIndex - " + accessControlResource + " not found in cache for role: " + role);
                             MyExpressRouter.responseWithSuccessJSON(res, dataJSON); //anyway answer normaly
                         }).catch(err => {
+                            console.log("Internal Error 1");
+                            console.log(err);
                             this.logger.error("[DefaultControllerHelper] handleIndex - " + accessControlResource + " found in cache for role: " + role + " - " + err.toString());
                             DefaultControllerHelper.respondWithInternalErrorMessage(res,err);
                         });
@@ -384,6 +387,9 @@ export default class DefaultControllerHelper {
                     //console.log("[DefaultControllerHelper] handleIndex found: "+resources.length);
                     DefaultControllerHelper.respondWithPermissionFilteredResources(req, res, resources, permission);
                 }).catch(err => {
+                    console.log("Internal Error 2");
+                    console.log(sequelizeQuery);
+                    console.log(err);
                     this.logger.error("[DefaultControllerHelper] handleIndex - " + accessControlResource + " with query: " + JSON.stringify(req.query) + " - " + err.toString());
                     DefaultControllerHelper.respondWithInternalErrorMessage(res,err);
                 });
