@@ -7,6 +7,7 @@ module.exports = {
 
     MyExpressRouter: require('./module/MyExpressRouter').default, // eslint-disable-line global-require
     ScheduleModule: require('./module/ScheduleModule').default, // eslint-disable-line global-require
+    MyAccessControl: require('./module/MyAccessControl').default, // eslint-disable-line global-require
 
     DefaultControllerHelper: require('./helper/DefaultControllerHelper').default, // eslint-disable-line global-require
     StringHelper: require('./helper/StringHelper').default, // eslint-disable-line global-require
