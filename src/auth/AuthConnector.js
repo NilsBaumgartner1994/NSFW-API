@@ -94,7 +94,7 @@ export default class AuthConnector {
      *
      * }
      */
-    static async authorize(authObject){
+    static async authorize(authObject, models){
         if(!!authObject){
             let authMethod = authObject[AuthConnector.AUTH_METHOD];
             if(!!authMethod){
@@ -102,7 +102,7 @@ export default class AuthConnector {
                 let connector = connectors[authMethod];
                 if(!!connector){
                     if(AuthConnector.allNeededParamsGiven(authObject,connector)){
-                        let answer = await connector.authorize(authObject);
+                        let answer = await connector.authorize(authObject, models);
                         return answer;
                     }
                 } else {
@@ -114,11 +114,12 @@ export default class AuthConnector {
         return AuthConnector.getError(AuthConnector.ERROR_MISSING_AUTH_NOT_GIVEN);
     }
 
-    static getSuccessMessage(authMedhod, myAccessControlRole, username, displayName, additionalInformation){
+    static getSuccessMessage(authMedhod, myAccessControlRole, id, username, displayName, additionalInformation){
         return {
             success: true,
             auth: {
                 [AuthConnector.AUTH_METHOD] : authMedhod,
+                id: id,
                 role: myAccessControlRole,
                 username: username,
                 displayName: displayName,

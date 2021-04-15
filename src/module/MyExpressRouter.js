@@ -107,7 +107,7 @@ export default class MyExpressRouter {
         // !!BEFORE any other things, otherwise body content wont be parsed
 
         let authConfig = serverConfig["auth"];
-        this.myAuthMiddlewares = new MyAuthMiddlewares(logger, expressApp, MyExpressRouter.routeAuth, authConfig);
+        this.myAuthMiddlewares = new MyAuthMiddlewares(logger, models, expressApp, MyExpressRouter.routeAuth, authConfig);
         //create the token helper
         //!!AFTER configureExpressApp, otherwise body content wont be parsed ...
 

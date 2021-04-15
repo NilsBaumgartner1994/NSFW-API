@@ -11,11 +11,12 @@ import AuthConnector from "./AuthConnector";
  */
 export default class MyAuthMiddlewares {
 
-    constructor(logger, expressApp, routeAuth, authConfig) {
+    constructor(logger, models, expressApp, routeAuth, authConfig) {
         this.logger = logger;
         this.expressApp = expressApp;
         this.routeAuth = routeAuth;
         this.authConfig = authConfig;
+        this.models = models;
 
         this.routeAuthMethodList = this.routeAuth+"/"+"methods";
         this.routeAuthAccessToken = this.routeAuth+"/"+"accessToken";
@@ -292,11 +293,12 @@ export default class MyAuthMiddlewares {
         req.locals = req.locals || {};
         req.locals.currentUser = {};
         req.locals.currentUser.role = MyAccessControl.roleNameGuest;
+        let models = this.models;
 
         let auth = req.body.auth;
 
         if (!!auth) { //if a plaintext was provided
-            let answer = await AuthConnector.authorize(auth);
+            let answer = await AuthConnector.authorize(auth, models);
             if(!!answer){
                 if(answer.success){
                     req.locals.currentUser = answer.auth;

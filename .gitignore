@@ -10,3 +10,5 @@ logs/
 backups/
 
 .DS_Store
+
+database/dbname.db

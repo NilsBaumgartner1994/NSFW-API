@@ -1,8 +1,8 @@
 import "regenerator-runtime/runtime.js";
 import ServerAPI from "./ServerAPI";
-import AuthConnector from "./auth/AuthConnector";
 import BackupPlugin from "./plugins/backupPlugin/BackupPlugin";
 import DefaultControllerHelper from "./helper/DefaultControllerHelper";
+import MyAccessControl from "./module/MyAccessControl";
 
 const config = {
     "production": {

@@ -30,7 +30,7 @@ export default class AuthConfigList {
         }
     }
 
-    static async authorize(authObject) {
+    static async authorize(authObject, models) {
         let username = authObject[AuthConfigList.PARAM_USERNAME];
         let password = authObject[AuthConfigList.PARAM_PASSWORD];
 
@@ -45,7 +45,7 @@ export default class AuthConfigList {
         if(!isAuthorized){
             return AuthConnector.getError(AuthConnector.ERROR_CREDENTIALS_INCORRECT);
         } else {
-            return AuthConnector.getSuccessMessage(AuthConfigList.AUTH_METHOD, MyAccessControl.roleNameAdmin, username, username,null);
+            return AuthConnector.getSuccessMessage(AuthConfigList.AUTH_METHOD, MyAccessControl.roleNameAdmin, null, username, username,null);
         }
     }
 

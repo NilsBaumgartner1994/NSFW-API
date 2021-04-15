@@ -27,7 +27,7 @@
  */
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define('User', {
-    pseudonym: DataTypes.STRING,
+      username: DataTypes.STRING,
     language: DataTypes.STRING,
     avatar: DataTypes.JSON,
     onlineTime: DataTypes.DATE,
