@@ -103,6 +103,7 @@ export default class AuthConnector {
                 if(!!connector){
                     if(AuthConnector.allNeededParamsGiven(authObject,connector)){
                         let answer = await connector.authorize(authObject, models);
+                        console.log(answer);
                         return answer;
                     }
                 } else {
