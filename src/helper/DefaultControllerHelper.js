@@ -276,6 +276,7 @@ export default class DefaultControllerHelper {
     getSequelizeQuery(req,permission,includeModels){
         let queryCopy = JSON.parse(JSON.stringify(req.query)); //create a copy on that we work
         delete queryCopy.limit;
+        delete queryCopy.attributes;
         delete queryCopy.offset;
         delete queryCopy.order;
         let params = req.query.params || "{}";
@@ -292,6 +293,9 @@ export default class DefaultControllerHelper {
         }
         if(req.query.order){ //check for order
             sequelizeQuery.order = JSON.parse(req.query.order);
+        }
+        if(req.query.attributes){ //check for selected attributes
+            sequelizeQuery.attributes = JSON.parse(req.query.attributes);
         }
         return sequelizeQuery;
     }
