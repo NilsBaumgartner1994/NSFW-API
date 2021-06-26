@@ -94,11 +94,21 @@ export default class ServerAPI {
         serverConfig = this.serverConfig;
         sequelizeConfig = this.sequelizeConfig;
         redisPort = this.serverConfig.redisPort;
-        await startServer();
     }
 
-    static startProxyServer(config){
-        DefaultProxyServer.start(config);
+    setProxyServerConfig(config){
+        this.proxyConfig = config;
+        this.serverConfig.disableAutoProxy = false;
+    }
+
+    async startProxyServer(){
+        if(!this.serverConfig.disableAutoProxy){
+            let config = null;
+            if(!!this.proxyConfig){
+                config = this.proxyConfig;
+            }
+            DefaultProxyServer.start(config);
+        }
     }
 
     registerPlugin(pluginName, pluginInstance){
@@ -182,6 +192,7 @@ async function startServer() {
         FancyTerminal.startFancyTerminal(); //start fancy terminal
 
         await startRedisServer(); //start the redis server
+        await startProxyServer();
 
         ServerAPI.sendToMaster(null, null, "Models synchronizing ...");
         models.sequelize
