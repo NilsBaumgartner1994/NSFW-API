@@ -42,6 +42,7 @@ export default class DefaultControllerHelper {
     }
 
     static async executeHookFunctions(resource, tablename, method, before){
+        //TODO Give possibility to block a request, "this action is blocked by a hook"
         let callbackFunctions = DefaultControllerHelper.getHookFunctions(tablename,method,before);
         for(let i=0; i<callbackFunctions.length; i++){
             let callbackFunction = callbackFunctions[i];
@@ -295,7 +296,9 @@ export default class DefaultControllerHelper {
             sequelizeQuery.order = JSON.parse(req.query.order);
         }
         if(req.query.attributes){ //check for selected attributes
-            sequelizeQuery.attributes = JSON.parse(req.query.attributes);
+            console.log("req.query.attributes");
+            console.log(req.query.attributes);
+            //sequelizeQuery.attributes = JSON.parse(req.query.attributes);
         }
         return sequelizeQuery;
     }

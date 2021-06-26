@@ -10,6 +10,7 @@ import MyLogger from "./module/MyLogger"; //Logger Module
 import FancyTerminal from "./helper/FancyTerminal";
 import SequelizeModelLoader from "./helper/SequelizeModelLoader";
 import DatabaseBackupModule from "./plugins/backupPlugin/DatabaseBackupModule";
+import DefaultProxyServer from "./helper/DefaultProxyServer";
 
 /**
  * ServerAPI Starts here
@@ -94,6 +95,10 @@ export default class ServerAPI {
         sequelizeConfig = this.sequelizeConfig;
         redisPort = this.serverConfig.redisPort;
         await startServer();
+    }
+
+    static startProxyServer(config){
+        DefaultProxyServer.start(config);
     }
 
     registerPlugin(pluginName, pluginInstance){
