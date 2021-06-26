@@ -94,6 +94,7 @@ export default class ServerAPI {
         serverConfig = this.serverConfig;
         sequelizeConfig = this.sequelizeConfig;
         redisPort = this.serverConfig.redisPort;
+        await this.startServer();
     }
 
     setProxyServerConfig(config){
@@ -102,12 +103,16 @@ export default class ServerAPI {
     }
 
     async startProxyServer(){
+        ServerAPI.sendToMaster(null, null, "Check Proxy Server ...");
         if(!this.serverConfig.disableAutoProxy){
+            ServerAPI.sendToMaster(null, null, "Starting Proxy Server ...");
             let config = null;
             if(!!this.proxyConfig){
                 config = this.proxyConfig;
             }
             DefaultProxyServer.start(config);
+        } else {
+            ServerAPI.sendToMaster(null, null, "Proxy Server not wanted");
         }
     }
 
@@ -175,40 +180,40 @@ export default class ServerAPI {
         await ServerAPI.sendToMaster(null, ServerAPI.MESSAGE_TYPE_COMMAND, ServerAPI.COMMAND_RESTART);
     }
 
-}
+    /***********************************************************************************************************************
+     *********************************************** Clustering ************************************************************
+     **********************************************************************************************************************/
 
-/***********************************************************************************************************************
- *********************************************** Clustering ************************************************************
- **********************************************************************************************************************/
+    /**
+     * The Main Function of the server
+     * @returns {Promise<void>}
+     */
+    async startServer() {
+        if (cluster.isMaster) { //if thats the master
+            console.log("Welcome to");
+            console.log(motd);
+            FancyTerminal.startFancyTerminal(); //start fancy terminal
 
-/**
- * The Main Function of the server
- * @returns {Promise<void>}
- */
-async function startServer() {
-    if (cluster.isMaster) { //if thats the master
-        console.log("Welcome to");
-        console.log(motd);
-        FancyTerminal.startFancyTerminal(); //start fancy terminal
+            await startRedisServer(); //start the redis server
+            await this.startProxyServer();
 
-        await startRedisServer(); //start the redis server
-        await startProxyServer();
-
-        ServerAPI.sendToMaster(null, null, "Models synchronizing ...");
-        models.sequelize
-        .sync()
-        .then(async function () { //model sync finished
-            ServerAPI.sendToMaster(null, null, "Models synchronized");
-            createCluster();
-            prepareMasterServer(); //after that is finished set ourself up
-        })
-        .catch(function (error) { //models cant be synced
-            ServerAPI.sendToMaster(null, null, "Error at Model Sync");
-            console.log(error.toString());
-        });
-    } else { //this is not the master then we dont need to reconfigure everything
-        prepareWorkerServer();
+            ServerAPI.sendToMaster(null, null, "Models synchronizing ...");
+            models.sequelize
+                .sync()
+                .then(async function () { //model sync finished
+                    ServerAPI.sendToMaster(null, null, "Models synchronized");
+                    createCluster();
+                    prepareMasterServer(); //after that is finished set ourself up
+                })
+                .catch(function (error) { //models cant be synced
+                    ServerAPI.sendToMaster(null, null, "Error at Model Sync");
+                    console.log(error.toString());
+                });
+        } else { //this is not the master then we dont need to reconfigure everything
+            prepareWorkerServer();
+        }
     }
+
 }
 
 function shutdownWorkers(signal){

@@ -24,6 +24,7 @@ const config = {
             "maxFileUploadSizeInMb": 50,
             "maxBodyUploadSizeInMb": 50
         },
+        "disableAutoProxy": false,
         "redisAlreadyRunning":false,
         "auth": {
             "disabled": true,
@@ -58,4 +59,5 @@ DefaultControllerHelper.addHook(accessControlResource, DefaultControllerHelper.C
 DefaultControllerHelper.addHook(accessControlResource, DefaultControllerHelper.CRUD_CREATE, () => {console.log("CREATE")}, true);
 DefaultControllerHelper.addHook(accessControlResource, DefaultControllerHelper.CRUD_UPDATE, () => {console.log("DELETE")}, true);
 
+console.log("Okay lets go");
 server.start();
