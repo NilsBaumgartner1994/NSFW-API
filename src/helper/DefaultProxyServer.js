@@ -4,8 +4,8 @@ export default class DefaultProxyServer{
 
     static DEFAULT_CONFIG = {
         "ssl": {
-            "privkeyPath" : "",
-            "certPath": ""
+            "privkeyPath" : "/etc/letsencrypt/live/yourdomain.de/privkey.pem",
+            "certPath": "/etc/letsencrypt/live/yourdomain.de/cert.pem"
         },
         "uploads": {
             "maxBodyUploadSizeInMb": 50
