@@ -25,6 +25,20 @@ const config = {
             "maxBodyUploadSizeInMb": 50
         },
         "disableAutoProxy": false,
+        "proxyConfig": {
+            "ssl": {
+                "privkeyPath" : "/etc/letsencrypt/live/swe-ag.informatik.uos.de/privkey.pem",
+                "certPath": "/etc/letsencrypt/live/swe-ag.informatik.uos.de/cert.pem"
+            },
+            "uploads": {
+                "maxBodyUploadSizeInMb": 50
+            },
+            "server": {
+                "api_server_domain": "localhost:3001",
+                "server_api_metrics": "localhost:9999/metrics/metrics",
+                "server_frontend_domain": "localhost:3000"
+            }
+        },
         "redisAlreadyRunning":false,
         "auth": {
             "disabled": true,

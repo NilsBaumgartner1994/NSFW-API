@@ -70,7 +70,7 @@ const motd = "\n" +
     "██║ ╚████║███████║██║     ╚███╔███╔╝      ██║  ██║██║     ██║\n" +
     "╚═╝  ╚═══╝╚══════╝╚═╝      ╚══╝╚══╝       ╚═╝  ╚═╝╚═╝     ╚═╝\n";
 
-export default class ServerAPI {
+export class ServerAPI {
 
     static MESSAGE_TYPE_CONSOLE = "Console";
     static MESSAGE_TYPE_COMMAND = "Command";
