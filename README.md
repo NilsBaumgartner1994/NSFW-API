@@ -1,5 +1,7 @@
 # NodeJS Sequelize FrameWork - API
 
+Have a look at the wiki: https://github.com/NilsBaumgartner1994/NSFW-API/wiki
+
 This Framework will create a REST API for given sequelize models with authorization and much more
 
 ## Requirements
