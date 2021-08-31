@@ -65,6 +65,7 @@ var currentPath = process.cwd();
 let pathToModels = currentPath+"/dev"; //path to models
 
 let server = new ServerAPI(config["server"], config["production"], pathToModels, 1);
+server.setAccessControlInstance(MyAccessControl.getCleanAccessControlInstanceWithDefaultRoles());
 server.registerPlugin("BackupPlugin", new BackupPlugin());
 
 let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename("Users");

@@ -34,6 +34,7 @@ export default class MyAccessControl {
         this.models = models;
         this.initialiseAccessControlInstance(); //init access control
         this.initialisePermissions(); // load permissions
+        this.checkIfCustomAccessControlInstanceFound();
         this.logger.info("[MyAccessControl] initialised");
 
     }
@@ -86,15 +87,36 @@ export default class MyAccessControl {
         return new AccessControl();
     }
 
+    static getCleanAccessControlInstanceWithDefaultRoles(){
+        return MyAccessControl.addDefaultRolesToAccessControlInstance(MyAccessControl.getCleanAccessControlInstance());
+    }
+
     /**
      * Create Access Control Instance
      */
     initialiseAccessControlInstance() {
-        if(!MyAccessControl.customAccessControl) {
-            this.ac = MyAccessControl.getCleanAccessControlInstance();
-        } else {
+        this.logger.info("[MyAccessControl] initialiseAccessControlInstance");
+        this.ac = MyAccessControl.getCleanAccessControlInstanceWithDefaultRoles();
+    }
+
+    checkIfCustomAccessControlInstanceFound(){
+        if(!!MyAccessControl.customAccessControl){
             this.ac = MyAccessControl.customAccessControl;
         }
+    }
+
+    static addDefaultRolesToAccessControlInstance(ac){
+        ac.grant(MyAccessControl.roleNameGuest);
+        ac.grant(MyAccessControl.roleNameUser);
+        ac.grant(MyAccessControl.roleNameUser).extend(MyAccessControl.roleNameGuest);
+        ac.grant(MyAccessControl.roleNameModerator);
+        ac.grant(MyAccessControl.roleNameModerator).extend(MyAccessControl.roleNameUser);
+        ac.grant(MyAccessControl.roleNameSuperModerator);
+        ac.grant(MyAccessControl.roleNameSuperModerator).extend(MyAccessControl.roleNameModerator);
+        ac.grant(MyAccessControl.roleNameAdmin);
+        ac.grant(MyAccessControl.roleNameAdmin).extend(MyAccessControl.roleNameSuperModerator);
+        ac.grant(MyAccessControl.roleNameOwner).extend(MyAccessControl.roleNameAdmin);
+        return ac;
     }
 
     /**
@@ -112,11 +134,7 @@ export default class MyAccessControl {
         let ac = this.getAccessControlInstance();
 
         //Create the Groups in Access Control
-        ac.grant(MyAccessControl.roleNameGuest);
-        ac.grant(MyAccessControl.roleNameUser);
-        ac.grant(MyAccessControl.roleNameModerator);
-        ac.grant(MyAccessControl.roleNameAdmin);
-        ac.grant(MyAccessControl.roleNameOwner);
+        MyAccessControl.addDefaultRolesToAccessControlInstance(ac);
 
         // Init the specific permissions
         this.initGuestPermissions();
@@ -172,7 +190,7 @@ export default class MyAccessControl {
      */
     initModeratorPermissions() {
         let ac = this.getAccessControlInstance();
-        ac.grant('moderator').extend(MyAccessControl.roleNameUser);
+        ac.grant(MyAccessControl.roleNameModerator).extend(MyAccessControl.roleNameUser);
 
         //should be able to see who is a special person
         //ac.grant(MyAccessControl.roleNameModerator).readAny(MyExpressRouter.userrole_accessControlResource, ['UserID', 'RoleId']);

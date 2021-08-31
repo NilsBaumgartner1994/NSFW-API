@@ -129,7 +129,7 @@ export default class ServerAPI {
         return false;
     }
 
-    static setAccessControlInstance(customAccessControlInstance){
+    setAccessControlInstance(customAccessControlInstance){
         MyAccessControl.customAccessControl = customAccessControlInstance
     }
 
