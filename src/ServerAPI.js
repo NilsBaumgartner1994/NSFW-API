@@ -129,6 +129,10 @@ export default class ServerAPI {
         return false;
     }
 
+    static setAccessControlInstance(customAccessControlInstance){
+        MyAccessControl.customAccessControl = customAccessControlInstance
+    }
+
     static getWorkderId(){
         if (cluster.isWorker) {
             return cluster.worker.id;

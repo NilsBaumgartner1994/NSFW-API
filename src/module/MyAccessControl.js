@@ -21,7 +21,7 @@ export default class MyAccessControl {
     static roleNameAdmin = "admin";
     static roleNameOwner = "owner";
 
-    static accessControl;
+    static customAccessControl;
 
     /**
      * Constructor
@@ -82,11 +82,19 @@ export default class MyAccessControl {
 
     }
 
+    static getCleanAccessControlInstance(){
+        return new AccessControl();
+    }
+
     /**
      * Create Access Control Instance
      */
     initialiseAccessControlInstance() {
-        this.ac = new AccessControl();
+        if(!MyAccessControl.customAccessControl) {
+            this.ac = MyAccessControl.getCleanAccessControlInstance();
+        } else {
+            this.ac = MyAccessControl.customAccessControl;
+        }
     }
 
     /**
