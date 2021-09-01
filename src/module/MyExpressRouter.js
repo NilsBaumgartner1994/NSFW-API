@@ -93,14 +93,16 @@ export default class MyExpressRouter {
      * @param myAccessControl the access controll instance
      * @param redisClient the redis client
      */
-    constructor(logger, bugReportLogger, expressApp, models, myAccessControl, redisClient, serverConfig) {
+    constructor(logger, bugReportLogger, expressApp, models, myAccessController, redisClient, serverConfig) {
         this.logger = logger;
         this.serverConfig = serverConfig;
         this.logger.info("[MyExpressRouter] initialising");
         this.startTime = new Date();
         this.models = models;
         this.expressApp = expressApp;
-        this.myAccessControl = myAccessControl;
+
+        this.myAccessController = myAccessController;
+        this.myAccessControl = myAccessController.getAccessControlInstance();
         MyExpressRouter.redisClient = redisClient;
 
         this.configureExpressApp(); //configure parameters like which requests are allowed
