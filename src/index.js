@@ -1,8 +1,11 @@
 // this should be the entry point to your library
+import AuthConfigList from "./auth/AuthConfigList";
+
 module.exports = {
     ServerAPI: require('./ServerAPI').default, // eslint-disable-line global-require
     CustomControllers: require('./controllers/CustomControllers').default, // eslint-disable-line global-require
     AuthConnector: require('./auth/AuthConnector').default, // eslint-disable-line global-require
+    AuthConfigList: require('./auth/AuthConfigList').default, // eslint-disable-line global-require
     DatabaseBackupModule: require('./plugins/backupPlugin/DatabaseBackupModule').default, // eslint-disable-line global-require
 
     MyExpressRouter: require('./module/MyExpressRouter').default, // eslint-disable-line global-require
