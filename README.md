@@ -1,3 +1,7 @@
+# Discontinued
+
+Since of becomming aware of strapi (https://strapi.io/) I wont continue on this project.
+
 # NodeJS Sequelize FrameWork - API
 
 Have a look at the wiki: https://github.com/NilsBaumgartner1994/NSFW-API/wiki
