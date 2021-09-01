@@ -31,11 +31,20 @@ export default class AuthConfigList {
     }
 
     static async authorize(authObject, models) {
+        console.log("authorize");
         let username = authObject[AuthConfigList.PARAM_USERNAME];
         let password = authObject[AuthConfigList.PARAM_PASSWORD];
 
+        console.log("Given username: "+username)
+        console.log("Given password: "+password)
+
+        console.log(AuthConfigList.ADMINS);
+
         let foundPassword = AuthConfigList.ADMINS[username] || password+"Not";
         let foundUsername = AuthConfigList.ADMINS.hasOwnProperty(username) ? username : username+"Not";
+
+
+        console.log("foundPassword: "+foundPassword)
 
         let passwordMatch = basicAuth.safeCompare(foundPassword,password);
         let usernameMatch = basicAuth.safeCompare(foundUsername,username);

@@ -40,6 +40,8 @@ export default class MyAuthMiddlewares {
 
         this.expressApp.post(this.routeAuthRefreshAccessToken, this.middlewareOnlyAuthenticatedViaRefreshToken.bind(this), this.handleRefreshAccessToken.bind(this));
 
+        this.expressApp.get(this.routeAuthLogout, this.middlewareOnlyAuthenticatedViaRefreshToken.bind(this), this.handleLogout.bind(this));
+        this.expressApp.get(this.routeAuthLogoutFromAllDevices, this.middlewareOnlyAuthenticatedViaPlaintextSecret.bind(this), this.handleLogoutFromAllDevices.bind(this));
         this.expressApp.post(this.routeAuthLogout, this.middlewareOnlyAuthenticatedViaRefreshToken.bind(this), this.handleLogout.bind(this));
         this.expressApp.post(this.routeAuthLogoutFromAllDevices, this.middlewareOnlyAuthenticatedViaPlaintextSecret.bind(this), this.handleLogoutFromAllDevices.bind(this));
 

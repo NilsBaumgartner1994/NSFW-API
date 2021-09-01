@@ -3,6 +3,11 @@ import ServerAPI from "./ServerAPI";
 import BackupPlugin from "./plugins/backupPlugin/BackupPlugin";
 import DefaultControllerHelper from "./helper/DefaultControllerHelper";
 import MyAccessControl from "./module/MyAccessControl";
+import AuthConfigList from "./auth/AuthConfigList";
+
+const admins = {
+    "admin": "admin"
+};
 
 const config = {
     "production": {
@@ -41,7 +46,10 @@ const config = {
         },
         "redisAlreadyRunning":false,
         "auth": {
-            "disabled": true,
+            "disabled": false,
+            "methods": {
+                "configList": true
+            }
         },
         "users": {
             "DaysOfInactivityUntilDeletion": 180,
@@ -64,8 +72,8 @@ const config = {
 var currentPath = process.cwd();
 let pathToModels = currentPath+"/dev"; //path to models
 
+AuthConfigList.setAdminsFile(admins);
 let server = new ServerAPI(config["server"], config["production"], pathToModels, 1);
-server.setAccessControlInstance(MyAccessControl.getCleanAccessControlInstanceWithDefaultRoles());
 
 server.registerPlugin("BackupPlugin", new BackupPlugin());
 
