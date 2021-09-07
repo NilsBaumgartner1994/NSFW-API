@@ -439,7 +439,7 @@ export default class DefaultControllerHelper {
             if(allowedAction){
                 return sequelizeResource.save().then(async (savedResource) => { //save resource, this will generate ids and other stuff
                     req.locals[accessControlResource] = savedResource;
-                    let allowedAction = await DefaultControllerHelper.executeHookFunctions(savedResource,accessControlResource,DefaultControllerHelper.CRUD_CREATE,false);
+                    let allowedAction = await DefaultControllerHelper.executeHookFunctions(req, res, savedResource,accessControlResource,DefaultControllerHelper.CRUD_CREATE,false);
                     if(!customAnswer){
                         this.handleGet(req, res, myAccessControl, accessControlResource);
                     }
@@ -552,7 +552,7 @@ export default class DefaultControllerHelper {
                 let allowedAction = await DefaultControllerHelper.executeHookFunctions(req, res, sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_UPDATE,true);
                 if(allowedAction){
                     sequelizeResource.update(allowedAttributesToUpdate).then(async (updatedResource) => { //update resource
-                        let allowedAction = await DefaultControllerHelper.executeHookFunctions(updatedResource,accessControlResource,DefaultControllerHelper.CRUD_UPDATE,false);
+                        let allowedAction = await DefaultControllerHelper.executeHookFunctions(req, res, updatedResource,accessControlResource,DefaultControllerHelper.CRUD_UPDATE,false);
                         req.locals[accessControlResource] = updatedResource;
                         this.handleGet(req, res, myAccessControl, accessControlResource);
                         this.updateTableUpdateTimes(sequelizeResource.constructor, updateTableUpdateTimes);
