@@ -77,8 +77,8 @@ let server = new ServerAPI(config["server"], config["production"], pathToModels,
 
 server.registerPlugin("BackupPlugin", new BackupPlugin());
 
-let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename("Users");
-DefaultControllerHelper.addHook(accessControlResource, DefaultControllerHelper.CRUD_READ, (resource, req, res, currentUser) => {console.log("READ")}, true);
+let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename("Exams");
+DefaultControllerHelper.addHook(accessControlResource, DefaultControllerHelper.CRUD_READ, (resource, req, res, currentUser) => {console.log("READ"); console.log(req.locals.currentUser)}, true);
 DefaultControllerHelper.addHook(accessControlResource, DefaultControllerHelper.CRUD_DELETE, (resource, req, res, currentUser) => {console.log("DELETE")}, true);
 DefaultControllerHelper.addHook(accessControlResource, DefaultControllerHelper.CRUD_CREATE, (resource, req, res, currentUser) => {console.log("CREATE")}, true);
 DefaultControllerHelper.addHook(accessControlResource, DefaultControllerHelper.CRUD_UPDATE, (resource, req, res, currentUser) => {console.log("DELETE")}, true);
