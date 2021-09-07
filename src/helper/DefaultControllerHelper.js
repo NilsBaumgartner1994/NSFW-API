@@ -41,13 +41,19 @@ export default class DefaultControllerHelper {
         }
     }
 
-    static async executeHookFunctions(resource, tablename, method, before){
+    static async executeHookFunctions(req, res, resource, tablename, method, before){
         //TODO Give possibility to block a request, "this action is blocked by a hook"
         let callbackFunctions = DefaultControllerHelper.getHookFunctions(tablename,method,before);
-        for(let i=0; i<callbackFunctions.length; i++){
+        let currentUser = req.local.currentUser;
+        let allowedAction = true;
+        for(let i=0; i<callbackFunctions.length && allowedAction; i++){
             let callbackFunction = callbackFunctions[i];
-            await callbackFunction(resource);
+            let allowedActionFromCallback = await callbackFunction(resource, req, res, currentUser);
+            if(allowedActionFromCallback!==undefined && allowedActionFromCallback !== null){
+                allowedAction = allowedActionFromCallback;
+            }
         }
+        return allowedAction;
     }
 
     static CRUD_CREATE = "CREATE";
@@ -426,21 +432,23 @@ export default class DefaultControllerHelper {
         this.logger.info("[DefaultControllerHelper] handleCreate - " + accessControlResource + " currentUser: " + req.locals.currentUser.id + " granted: " + permission.granted);
         if (permission.granted) { //check if allowed to create the resource
             console.log("permission granted");
-            await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_CREATE,true);
-            return sequelizeResource.save().then(async (savedResource) => { //save resource, this will generate ids and other stuff
-                req.locals[accessControlResource] = savedResource;
-                await DefaultControllerHelper.executeHookFunctions(savedResource,accessControlResource,DefaultControllerHelper.CRUD_CREATE,false);
-                if(!customAnswer){
-                    this.handleGet(req, res, myAccessControl, accessControlResource);
-                }
-                this.updateTableUpdateTimes(sequelizeResource.constructor, updateTableUpdateTimes); //pass update check to function
-                return savedResource;
-            }).catch(err => {
-                console.log(err);
-                this.logger.error("[DefaultControllerHelper] handleCreate - " + err.toString());
-                DefaultControllerHelper.respondWithInternalErrorMessage(res,err);
-                return null;
-            });
+            let allowedAction = await DefaultControllerHelper.executeHookFunctions(req, res, sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_CREATE,true);
+            if(allowedAction){
+                return sequelizeResource.save().then(async (savedResource) => { //save resource, this will generate ids and other stuff
+                    req.locals[accessControlResource] = savedResource;
+                    let allowedAction = await DefaultControllerHelper.executeHookFunctions(savedResource,accessControlResource,DefaultControllerHelper.CRUD_CREATE,false);
+                    if(!customAnswer){
+                        this.handleGet(req, res, myAccessControl, accessControlResource);
+                    }
+                    this.updateTableUpdateTimes(sequelizeResource.constructor, updateTableUpdateTimes); //pass update check to function
+                    return savedResource;
+                }).catch(err => {
+                    console.log(err);
+                    this.logger.error("[DefaultControllerHelper] handleCreate - " + err.toString());
+                    DefaultControllerHelper.respondWithInternalErrorMessage(res,err);
+                    return null;
+                });
+            }
         }
     }
 
@@ -486,9 +494,11 @@ export default class DefaultControllerHelper {
 
             let permission = DefaultControllerHelper.handleDefaultPermissionCheck(req, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_UPDATE, isOwn);
             if(permission.granted){
-                await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_READ,true);
-                DefaultControllerHelper.respondWithPermissionFilteredResource(req, res, sequelizeResource, permission);
-                await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_READ,false);
+                let allowedAction = await DefaultControllerHelper.executeHookFunctions(req, res, sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_READ,true);
+                if(allowedAction){
+                    DefaultControllerHelper.respondWithPermissionFilteredResource(req, res, sequelizeResource, permission);
+                    let allowedAction = await DefaultControllerHelper.executeHookFunctions(req, res, sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_READ,false);
+                }
             }
         }
     }
@@ -536,16 +546,18 @@ export default class DefaultControllerHelper {
                 this.logger.info("[DefaultControllerHelper] handleUpdate - " + accessControlResource + " currentUser:" + req.locals.currentUser.id + " body: " + JSON.stringify(req.body));
                 let allowedAttributesToUpdate = DefaultControllerHelper.getFilteredReqBodyByPermission(req,myAccessControl,accessControlResource,DefaultControllerHelper.CRUD_UPDATE, isOwn)
                 this.logger.info("[DefaultControllerHelper] handleUpdate - " + accessControlResource + " currentUser:" + req.locals.currentUser.id + " allowedAttributesToUpdate: " + JSON.stringify(allowedAttributesToUpdate));
-                await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_UPDATE,true);
-                sequelizeResource.update(allowedAttributesToUpdate).then(async (updatedResource) => { //update resource
-                    await DefaultControllerHelper.executeHookFunctions(updatedResource,accessControlResource,DefaultControllerHelper.CRUD_UPDATE,false);
-                    req.locals[accessControlResource] = updatedResource;
-                    this.handleGet(req, res, myAccessControl, accessControlResource);
-                    this.updateTableUpdateTimes(sequelizeResource.constructor, updateTableUpdateTimes);
-                }).catch(err => {
-                    this.logger.error("[DefaultControllerHelper] handleUpdate - " + err.toString());
-                    DefaultControllerHelper.respondWithInternalErrorMessage(res,err);
-                });
+                let allowedAction = await DefaultControllerHelper.executeHookFunctions(req, res, sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_UPDATE,true);
+                if(allowedAction){
+                    sequelizeResource.update(allowedAttributesToUpdate).then(async (updatedResource) => { //update resource
+                        let allowedAction = await DefaultControllerHelper.executeHookFunctions(updatedResource,accessControlResource,DefaultControllerHelper.CRUD_UPDATE,false);
+                        req.locals[accessControlResource] = updatedResource;
+                        this.handleGet(req, res, myAccessControl, accessControlResource);
+                        this.updateTableUpdateTimes(sequelizeResource.constructor, updateTableUpdateTimes);
+                    }).catch(err => {
+                        this.logger.error("[DefaultControllerHelper] handleUpdate - " + err.toString());
+                        DefaultControllerHelper.respondWithInternalErrorMessage(res,err);
+                    });
+                }
             }
         }
     }
@@ -573,15 +585,17 @@ export default class DefaultControllerHelper {
             if(permission.granted){
                 this.logger.info("[DefaultControllerHelper] handleDelete - " + accessControlResource + " currentUser: " + req.locals.currentUser.id + " granted: " + permission.granted);
                 let constructor = sequelizeResource.constructor; //get constructor for table update times
-                await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_DELETE,true);
-                sequelizeResource.destroy().then(async (amountDeletedResources) => { //ignoring the amount of deletions
-                    await DefaultControllerHelper.executeHookFunctions(sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_DELETE,false);
-                    DefaultControllerHelper.respondWithDeleteMessage(req, res);
-                    this.updateTableUpdateTimes(constructor, updateTableUpdateTimes);
-                }).catch(err => {
-                    this.logger.error("[DefaultControllerHelper] handleDelete - " + accessControlResource + " " + err.toString());
-                    DefaultControllerHelper.respondWithInternalErrorMessage(res,err);
-                });
+                let allowedAction = await DefaultControllerHelper.executeHookFunctions(req, res, sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_DELETE,true);
+                if(allowedAction){
+                    sequelizeResource.destroy().then(async (amountDeletedResources) => { //ignoring the amount of deletions
+                        let allowedAction = await DefaultControllerHelper.executeHookFunctions(req, res, sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_DELETE,false);
+                        DefaultControllerHelper.respondWithDeleteMessage(req, res);
+                        this.updateTableUpdateTimes(constructor, updateTableUpdateTimes);
+                    }).catch(err => {
+                        this.logger.error("[DefaultControllerHelper] handleDelete - " + accessControlResource + " " + err.toString());
+                        DefaultControllerHelper.respondWithInternalErrorMessage(res,err);
+                    });
+                }
             }
         }
     }
