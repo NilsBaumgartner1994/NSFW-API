@@ -209,7 +209,6 @@ export default class SequelizeController {
 
         console.log("")
         console.log("paramPrimaryParamChecker");
-        console.log(accessControlResource);
         console.log("")
 
         // define a search clause for the model

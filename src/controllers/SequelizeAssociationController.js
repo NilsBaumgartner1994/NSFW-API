@@ -330,7 +330,6 @@ export default class SequelizeAssociationController {
             let permission = DefaultControllerHelper.getPermission(req,this.myAccessControl,accessControlAssociationResource,DefaultControllerHelper.CRUD_CREATE,false);
             if(permission.granted){
                 let resource = req.locals[accessControlResource];
-                console.log(resource);
 
                 let currentAssociationResource = await resource[associationFunction]();
                 if(!!currentAssociationResource){
@@ -338,11 +337,8 @@ export default class SequelizeAssociationController {
                     return;
                 } else {
                     console.log("Okay no resource associated yet");
-                    console.log(accessControlAssociationResource);
-                    console.log(req.locals);
 
                     let newAssociationResource = req.locals[accessControlAssociationResource];
-                    console.log(newAssociationResource);
 
                     let isAssociated = await resource["set"+singularName](newAssociationResource);
                     console.log(isAssociated);
