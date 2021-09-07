@@ -44,11 +44,10 @@ export default class DefaultControllerHelper {
     static async executeHookFunctions(req, res, resource, tablename, method, before){
         //TODO Give possibility to block a request, "this action is blocked by a hook"
         let callbackFunctions = DefaultControllerHelper.getHookFunctions(tablename,method,before);
-        let currentUser = req.locals.currentUser;
         let allowedAction = true;
         for(let i=0; i<callbackFunctions.length && allowedAction; i++){
             let callbackFunction = callbackFunctions[i];
-            let allowedActionFromCallback = await callbackFunction(resource, req, res, currentUser);
+            let allowedActionFromCallback = await callbackFunction(resource, req, res);
             if(allowedActionFromCallback!==undefined && allowedActionFromCallback !== null){
                 allowedAction = allowedActionFromCallback;
             }
