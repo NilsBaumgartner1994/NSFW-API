@@ -45,8 +45,10 @@ export default class DefaultControllerHelper {
     }
 
     static async executeHookFunctions(req, res, resource, tablename, method, before){
+        console.log("executeHookFunctions: | tablename: "+tablename+" | method: "+method+" | before: "+before)
         //TODO Give possibility to block a request, "this action is blocked by a hook"
         let callbackFunctions = DefaultControllerHelper.getHookFunctions(tablename,method,before);
+        console.log("Found "+callbackFunctions.length+" hooks");
 
         let allowedAction = true;
         for(let i=0; i<callbackFunctions.length && allowedAction; i++){
