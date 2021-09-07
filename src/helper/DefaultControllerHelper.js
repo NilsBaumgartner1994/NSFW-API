@@ -305,8 +305,6 @@ export default class DefaultControllerHelper {
             sequelizeQuery.order = JSON.parse(req.query.order);
         }
         if(req.query.attributes){ //check for selected attributes
-            console.log("req.query.attributes");
-            console.log(req.query.attributes);
             //sequelizeQuery.attributes = JSON.parse(req.query.attributes);
         }
         return sequelizeQuery;

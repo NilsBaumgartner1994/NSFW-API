@@ -341,7 +341,6 @@ export default class SequelizeAssociationController {
                     let newAssociationResource = req.locals[accessControlAssociationResource];
 
                     let isAssociated = await resource["set"+singularName](newAssociationResource);
-                    console.log(isAssociated);
 
                     if(isAssociated){
                         DefaultControllerHelper.respondWithSuccessMessage(req, res); //TODO better response ? Maybe handleGet ?
