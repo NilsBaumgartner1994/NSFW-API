@@ -35,7 +35,10 @@ export default class DefaultControllerHelper {
     static getHookFunctions(tablename, method, before=true){
         let hookStage = before ? DefaultControllerHelper.HOOK_BEFORE : DefaultControllerHelper.HOOK_AFTER;
         try{
-            return DefaultControllerHelper.hooks[tablename][method][hookStage] || [];
+            if(!!tablename && !!method){
+                return DefaultControllerHelper.hooks[tablename][method][hookStage] || [];
+            }
+            return [];
         } catch (e){
             return [];
         }
@@ -44,18 +47,11 @@ export default class DefaultControllerHelper {
     static async executeHookFunctions(req, res, resource, tablename, method, before){
         //TODO Give possibility to block a request, "this action is blocked by a hook"
         let callbackFunctions = DefaultControllerHelper.getHookFunctions(tablename,method,before);
-        let currentUser = {};
-        try{
-            currentUser = req.locals.currentUser;
-        } catch (err){
-            console.log("executeHookFunctions: "+tablename+" method: "+method+" before: "+before);
-            console.log(err);
-        }
 
         let allowedAction = true;
         for(let i=0; i<callbackFunctions.length && allowedAction; i++){
             let callbackFunction = callbackFunctions[i];
-            let allowedActionFromCallback = await callbackFunction(resource, req, res, currentUser);
+            let allowedActionFromCallback = await callbackFunction(resource, req, res);
             if(allowedActionFromCallback!==undefined && allowedActionFromCallback !== null){
                 allowedAction = allowedActionFromCallback;
             }
