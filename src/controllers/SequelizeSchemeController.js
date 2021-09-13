@@ -41,7 +41,7 @@ export default class SequelizeSchemeController {
             for(let i=0; i<tableNames.length; i++){
                 let tableName = tableNames[i];
                 let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
-                if(modelsWithPermission.includes(accessControlResource)){
+                if(true || modelsWithPermission.includes(accessControlResource)){
                     intersection.push(tableName);
                 }
             }
