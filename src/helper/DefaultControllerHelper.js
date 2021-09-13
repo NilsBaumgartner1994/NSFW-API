@@ -368,7 +368,6 @@ export default class DefaultControllerHelper {
         }
 
         if (permission.granted) { //can you read any of this resource ?
-            console.log("Permission granted");
             let redisClient = MyExpressRouter.redisClient; //get the client
             if(!!redisKey && !DefaultControllerHelper.isQueryInRequest(req)){
                 let role = req.locals.currentUser.role; //get users role
@@ -434,7 +433,6 @@ export default class DefaultControllerHelper {
 
         this.logger.info("[DefaultControllerHelper] handleCreate - " + accessControlResource + " currentUser: " + req.locals.currentUser.id + " granted: " + permission.granted);
         if (permission.granted) { //check if allowed to create the resource
-            console.log("permission granted");
             let allowedAction = await DefaultControllerHelper.executeHookFunctions(req, res, sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_CREATE,true);
             if(allowedAction){
                 return sequelizeResource.save().then(async (savedResource) => { //save resource, this will generate ids and other stuff
@@ -495,7 +493,7 @@ export default class DefaultControllerHelper {
         if(sequelizeResource){
             let isOwn = DefaultControllerHelper.getOwningState(req,accessControlResource);
 
-            let permission = DefaultControllerHelper.handleDefaultPermissionCheck(req, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_UPDATE, isOwn);
+            let permission = DefaultControllerHelper.handleDefaultPermissionCheck(req, res, myAccessControl, accessControlResource, DefaultControllerHelper.CRUD_READ, isOwn);
             if(permission.granted){
                 let allowedAction = await DefaultControllerHelper.executeHookFunctions(req, res, sequelizeResource,accessControlResource,DefaultControllerHelper.CRUD_READ,true);
                 if(allowedAction){
@@ -604,16 +602,10 @@ export default class DefaultControllerHelper {
     }
 
     static handleDefaultPermissionCheck(req, res, myAccessControl,accessControlResource,crudOperation,isOwn=false){
-        console.log("handleDefaultPermissionCheck");
-        console.log("accessControlResource: ",accessControlResource);
-        console.log("crudOperation: ",crudOperation);
-        console.log("isOwn: ", isOwn);
-
         let permission = DefaultControllerHelper.getPermission(req,myAccessControl,accessControlResource,crudOperation,isOwn);
 
 
         if (!permission.granted){
-            console.log("Forbidden");
             DefaultControllerHelper.respondWithForbiddenMessage(req,res,crudOperation+" "+accessControlResource);
             return permission;
         }
@@ -622,14 +614,10 @@ export default class DefaultControllerHelper {
 
     static getPermission(req,myAccessControl,accessControlResource,crudOperation,isOwn=false){
         crudOperation = crudOperation.toLowerCase();
-
-        console.log("myAccessControl: ",myAccessControl);
-        console.log("req.locals.currentUser.role: ",req.locals.currentUser.role);
         let permission = myAccessControl.can(req.locals.currentUser.role)[crudOperation+"Any"](accessControlResource);
         if (isOwn) {
             permission = myAccessControl.can(req.locals.currentUser.role)[crudOperation+"Own"](accessControlResource);
         }
-        console.log(permission);
         return permission;
     }
 }
