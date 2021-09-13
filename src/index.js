@@ -1,4 +1,5 @@
 // this should be the entry point to your library
+
 module.exports = {
     ServerAPI: require('./ServerAPI').default, // eslint-disable-line global-require
     CustomControllers: require('./controllers/CustomControllers').default, // eslint-disable-line global-require
@@ -6,6 +7,7 @@ module.exports = {
     AuthConfigList: require('./auth/AuthConfigList').default, // eslint-disable-line global-require
     DatabaseBackupModule: require('./plugins/backupPlugin/DatabaseBackupModule').default, // eslint-disable-line global-require
 
+    SequelizeAssociationController: require("./controllers/SequelizeAssociationController").default, // eslint-disable-line global-require
     MyExpressRouter: require('./module/MyExpressRouter').default, // eslint-disable-line global-require
     ScheduleModule: require('./module/ScheduleModule').default, // eslint-disable-line global-require
     MyAccessControl: require('./module/MyAccessControl').default, // eslint-disable-line global-require
@@ -16,4 +18,5 @@ module.exports = {
     StringHelper: require('./helper/StringHelper').default, // eslint-disable-line global-require
     NumberHelper: require('./helper/NumberHelper').default, // eslint-disable-line global-require
     FileSystemHelper: require('./helper/FileSystemHelper').default, // eslint-disable-line global-require
+
 };
