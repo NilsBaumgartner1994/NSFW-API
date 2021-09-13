@@ -150,6 +150,7 @@ export default class SequelizeAssociationController {
             let accessControlResource = MyAccessControl.getAccessControlResourceOfTablename(tableName);
 
             let resource = req.locals[accessControlResource];
+            console.log("configureMultipleAssociationsIndexRoute: ",accessControlAssociationResource);
             this.myExpressRouter.defaultControllerHelper.handleAssociationIndex(req,res,resource,this.myAccessControl,accessControlAssociationResource,modelAssociationName,associationFunction,false)
         }
 
@@ -165,6 +166,7 @@ export default class SequelizeAssociationController {
 
         let functionForModel = async function(req, res) { //define the get function
             //just call the default GET
+            console.log("accessControlAssociationResource: ",accessControlAssociationResource);
             this.myExpressRouter.defaultControllerHelper.handleGet(req, res, this.myAccessControl, accessControlAssociationResource);
         }
 

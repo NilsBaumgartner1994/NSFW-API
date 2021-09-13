@@ -602,10 +602,6 @@ export default class DefaultControllerHelper {
     }
 
     static handleDefaultPermissionCheck(req, res, myAccessControl,accessControlResource,crudOperation,isOwn=false){
-        console.log("handleDefaultPermissionCheck");
-        console.log("accessControlResource: ",accessControlResource);
-        console.log("crudOperation: ",crudOperation);
-        console.log("isOwn: ",isOwn);
         let permission = DefaultControllerHelper.getPermission(req,myAccessControl,accessControlResource,crudOperation,isOwn);
         if (!permission.granted){
             DefaultControllerHelper.respondWithForbiddenMessage(req,res,crudOperation+" "+accessControlResource);
@@ -615,8 +611,13 @@ export default class DefaultControllerHelper {
     }
 
     static getPermission(req,myAccessControl,accessControlResource,crudOperation,isOwn=false){
+        console.log("handleDefaultPermissionCheck");
+        console.log("accessControlResource: ",accessControlResource);
+        console.log("crudOperation: ",crudOperation);
+        console.log("isOwn: ",isOwn);
         crudOperation = crudOperation.toLowerCase();
         let permission = myAccessControl.can(req.locals.currentUser.role)[crudOperation+"Any"](accessControlResource);
+        console.log("granted: ",permission.granted)
         if (isOwn) {
             permission = myAccessControl.can(req.locals.currentUser.role)[crudOperation+"Own"](accessControlResource);
         }
