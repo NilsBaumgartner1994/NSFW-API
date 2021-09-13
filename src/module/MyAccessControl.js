@@ -241,6 +241,7 @@ export default class MyAccessControl {
 
         for (let i = 0; i < totalAdminPermission.length; i++) { //for all permissions allow everything
             let accessControl = totalAdminPermission[i];
+            console.log("accessControl: ",accessControl);
             ac.grant(role).createAny(accessControl, ['*']);
             ac.grant(role).readAny(accessControl, ['*']);
             ac.grant(role).updateAny(accessControl, ['*']);
