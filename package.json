@@ -1,6 +1,6 @@
 {
   "name": "nsfw-api",
-  "version": "1.0.84",
+  "version": "1.0.85",
   "description": "NodeJS Sequelize FrameWork API",
   "main": "dist/src/index.js",
   "scripts": {
