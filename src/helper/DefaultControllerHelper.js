@@ -602,9 +602,11 @@ export default class DefaultControllerHelper {
     }
 
     static handleDefaultPermissionCheck(req, res, myAccessControl,accessControlResource,crudOperation,isOwn=false){
+        console.log("handleDefaultPermissionCheck");
+        console.log("accessControlResource: ",accessControlResource);
+        console.log("crudOperation: ",crudOperation);
+        console.log("isOwn: ",isOwn);
         let permission = DefaultControllerHelper.getPermission(req,myAccessControl,accessControlResource,crudOperation,isOwn);
-
-
         if (!permission.granted){
             DefaultControllerHelper.respondWithForbiddenMessage(req,res,crudOperation+" "+accessControlResource);
             return permission;
