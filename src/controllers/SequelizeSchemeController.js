@@ -67,8 +67,8 @@ export default class SequelizeSchemeController {
 
             let permission = DefaultControllerHelper.getPermission(req,this.myAccessControl,accessControlResource,DefaultControllerHelper.CRUD_READ,false);
             if (permission.granted || true) {
-                let fileteredDataJSON = permission.filter(rawAttributes);
-                MyExpressRouter.responseWithSuccessJSON(res, fileteredDataJSON);
+                //let fileteredDataJSON = permission.filter(rawAttributes);
+                MyExpressRouter.responseWithSuccessJSON(res, rawAttributes);
             } else {
                 MyExpressRouter.responseWithErrorJSON(res, HttpStatus.FORBIDDEN, {
                     errorCode: HttpStatus.FORBIDDEN,
