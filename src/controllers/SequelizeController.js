@@ -95,6 +95,7 @@ export default class SequelizeController {
             try{
                 let modelForOwnTest = model.build(req.body); //play as everything would be allowed
                 await DefaultControllerHelper.setOwningStateForResource(req,accessControlResource,modelForOwnTest)
+                isOwn = DefaultControllerHelper.getOwningState(req,accessControlResource);
             } catch(err){
                 console.log("If the error is isOwn is not found, then ignore"); //TODO remove after testing
                 console.log(err);
