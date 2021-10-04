@@ -46,7 +46,7 @@ const config = {
         },
         "redisAlreadyRunning":false,
         "auth": {
-            "disabled": false,
+            "disabled": true,
             "methods": {
                 "configList": true
             }
