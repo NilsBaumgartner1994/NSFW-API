@@ -265,16 +265,11 @@ export default class DefaultControllerHelper {
         for(let i=0; i<queryFilteredKeys.length;i++){
             let key = queryFilteredKeys[i]; //get key like "id"
             let content = queryFiltered[key];
-            console.log("typeof content: "+typeof content);
-            console.log(content);
             if(!!content && typeof content === "object"){ //check if we have search params
                 let parsedContent = content //well then parse it
 		        let operatorKeys = Object.keys(parsedContent); //get all keys like: greater than: gte
-                console.log("operatorKeys");
-                console.log(operatorKeys);
                 for(let j=0; j<operatorKeys.length; j++){ //for all operators
                     let operator = operatorKeys[j];
-                    console.log("operator: ",operator);
                     if(!!Op[operator]){
                         parsedContent[Op[operator]] = parsedContent[operator]; //replace specific operator
                         delete parsedContent[operator]; //delete old string "operator"
@@ -301,12 +296,8 @@ export default class DefaultControllerHelper {
         delete queryCopy.order;
         let params = req.query.params || "{}";
         params = JSON.parse(params);
-        console.log(params);
         let queryFiltered = permission.filter(params); //filter all now allowed query variables
         queryFiltered = this.parseOperatorContent(queryFiltered);
-        console.log("queryFiltered: ");
-        console.log(queryFiltered);
-        console.log(JSON.stringify(queryFiltered));
         let sequelizeQuery = {include: includeModels, where: {[Op.and]: queryFiltered}};
 
         if(req.query.limit){ //check for limit
